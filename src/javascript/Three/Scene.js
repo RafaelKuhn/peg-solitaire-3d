@@ -2,13 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { gsap } from 'gsap';
+import * as datgui from 'dat.gui';
 
 import Resources from '@/javascript/Three/Resources';
 import Ticker from '@/javascript/Three/Ticker';
-
 import { autoResize } from "@/javascript/Three/AutoResize";
 
-import { TeapotGeometry } from './Geometries/TeapotGeometry';
+import { TeapotGeometry } from '@/javascript/Three/Geometries/TeapotGeometry';
+
 
 const TAU = 6.283185;
 const HALF_TAU = TAU * 0.5;
@@ -16,27 +17,27 @@ const anEighth = 0.125;
 
 export default class {
 
-  async startScene(canvas) {
+  async startScene(canvas, onLoadingScreenEnd) {
+    const isDebugMode = window.location.hash === "#debug";
+
     const scene = new THREE.Scene();
 
-    const pointLight = new THREE.PointLight(0xffffff, 1);
-    pointLight.position.set(0, 1, 1);
-    scene.add(
-      new THREE.AmbientLight(0xffffff, 1),
-      pointLight
-    )
-    
+    // Lights
+    const ambient = new THREE.AmbientLight( 0xffffff, 0.5 )
+    scene.add(ambient)
 
-    // All part of the loading screen
-    const teapot = new THREE.Mesh(
-      new TeapotGeometry(),
-      new THREE.MeshToonMaterial({ color: 0x7707f7 })
-    )
-    //teapot.rotation.y = anEighth * TAU;
-    teapot.scale.set(0.02, 0.02, 0.02)
-    teapot.position.set(0, 2, 0)
-    scene.add(teapot);
-    
+    const directional = new THREE.DirectionalLight( 0xeeeeff, 0.9 )
+    directional.position.z -= 3
+    directional.position.y += 2
+    scene.add(directional)
+
+    if (isDebugMode) {
+      const directionalHelper = new THREE.DirectionalLightHelper(directional);
+      scene.add(directionalHelper)
+      let lightHelper = new THREE.AxesHelper(0.5)
+      lightHelper.position.add(directional.position)
+      scene.add(lightHelper)
+    }
 
     // Data
     const sizes = {
@@ -48,14 +49,8 @@ export default class {
       y: 0
     }
 
-    
     // Camera
-    const cameraOrigin = new THREE.Vector3(2,5,10);
-    const cameraFocus = new THREE.Vector3(0, 2, 0);
-    const cameraDistance = cameraOrigin.distanceTo(cameraFocus);
     const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 2000)
-    camera.position.set(cameraOrigin.x, cameraOrigin.y, cameraOrigin.z);
-    camera.lookAt(cameraFocus);
     scene.add(camera)
 
     // Renderer
@@ -63,11 +58,7 @@ export default class {
       canvas: canvas,
       antialias: true
     })
-
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     const render = () => renderer.render(scene, camera);
-
 
     // Adjust sizes, camera and renderer based on viewport dimensions
     autoResize(sizes, camera, renderer);
@@ -78,6 +69,27 @@ export default class {
     ticker.tick();
 
 
+    // Loading screen
+    camera.position.set(6, 4, 0);
+    camera.lookAt(new THREE.Vector3(0, 2, 0));
+
+    const teapot = new THREE.Mesh(
+      new TeapotGeometry(1),
+      new THREE.MeshStandardMaterial({ color: 0xe06940 })
+    )
+    teapot.rotation.set(0, 0.25 * TAU, 0);
+    teapot.position.set(0, 2, 0)
+    scene.add(teapot);
+  
+    const buffgeoBack = new THREE.IcosahedronBufferGeometry(10,2);
+    const back = new THREE.Mesh( buffgeoBack, new THREE.MeshBasicMaterial({
+      map: gradTexture([[0.75,0.6,0.4,0.25], ['#00111a', '#4b5f7f', '#34726e', '#34726e', ]]),
+      side:THREE.BackSide,
+      depthWrite: false,
+      fog:false
+    }));
+    scene.add( back );
+    // end loading screen
 
     // Resources
     // TODO: use loading screen class
@@ -86,20 +98,37 @@ export default class {
     );
 
     await resources.loadResources();
-
     console.log("resources finished loading");
-    
 
-    scene.background = resources.items["skybox"];
 
+
+    // clean loading screen
     teapot.geometry.dispose();
     teapot.material.dispose();
     scene.remove(teapot);
-    // loading screen end
+    back.geometry.dispose();
+    back.material.dispose();
+    scene.remove(back);
+    
+    onLoadingScreenEnd();
+    // loading screen clean end
+
+
+
 
     
-    // Controls
-    const controls = new OrbitControls(camera, canvas);
+    scene.background = resources.items["skybox"];
+    
+    camera.position.set(9.8, 9.5, 5.2);
+
+
+    if (isDebugMode) {
+      const controls = new OrbitControls(camera, canvas);
+    }
+    
+    // else { const controls = new OrbitControls(camera, canvas); }
+    
+    
     window.addEventListener("mousemove", (evt) => {
       // pointer will go from -0.5 to 0.5 screen space
       pointer.x = (evt.clientX / sizes.width) - 0.5;
@@ -119,8 +148,16 @@ export default class {
       0, 0, 1, 1, 1, 0, 0,
     ];
 
+    /** @type {THREE.Group} */
     const rootBoard = resources.items["board"].scene;
-    scene.add(rootBoard.clone());
+    scene.add(rootBoard);
+    rootBoard.traverse(obj => {
+      if (obj.type === "Mesh") {
+        // obj.material = new THREE.MeshMatcapMaterial({ matcap: resources.items["skyMatcap"] });
+        // obj.material = new THREE.MeshStandardMaterial({ });
+
+      }
+    })
 
     /** @type {THREE.Group} */
     const rootPiece = resources.items["piece"].scene;
@@ -139,18 +176,32 @@ export default class {
     
 
     // Debug
-    const helper = new THREE.AxesHelper(100);
-    scene.add(helper);
-    
-    // const meshHelper = new THREE.AxesHelper(1);
-    // meshHelper.position.add(mesh.position);
-    // meshHelper.rotation.setFromVector3(mesh.rotation);
-    // scene.add(meshHelper);
-    
+    if (isDebugMode) {
+      const helper = new THREE.AxesHelper(100);
+      scene.add(helper);
+    }
   }
 
 }
+// "Resta um 🎮🎲"
 
+
+
+
+function gradTexture(color) {
+  var c = document.createElement("canvas");
+  var ct = c.getContext("2d");
+  var size = 1024;
+  c.width = 16; c.height = size;
+  var gradient = ct.createLinearGradient(0,0,0,size);
+  var i = color[0].length;
+  while(i--){ gradient.addColorStop(color[0][i],color[1][i]); }
+  ct.fillStyle = gradient;
+  ct.fillRect(0,0,16,size);
+  var texture = new THREE.Texture(c);
+  texture.needsUpdate = true;
+  return texture;
+}  
 
 
 
@@ -217,3 +268,5 @@ function addOnClickBouncyAnimation(mesh) {
     isJumping = false;
   });
 }
+
+

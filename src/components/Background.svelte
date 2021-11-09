@@ -1,23 +1,21 @@
 <script>
-  import { onMount } from 'svelte';
+  import { getContext, onMount } from 'svelte';
   import Scene from '@/javascript/Three/Scene'
-  
-  let canvas;
-  let scene;
-  onMount(() => {
-    scene = new Scene();
-    scene.startScene(canvas);
-  })
 
+  let canvas;
+
+  const modifyTitle = getContext("modifyTitle");
+
+  onMount(() => {
+    const scene = new Scene();
+    scene.startScene(canvas, modifyTitle);
+  })
+  
   
 </script>
 
 <style>
-  canvas {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-  }
+  
 </style>
 
 <canvas bind:this={canvas}></canvas>

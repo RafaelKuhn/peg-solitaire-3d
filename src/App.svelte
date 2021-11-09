@@ -1,10 +1,19 @@
 <script>
+  import { setContext } from 'svelte';
   import Background from "@/components/Background.svelte";
+
+  let title = "Carregando...";
+  
+  const modifyTitle = input => title = input;
+  const endLoading = input => {
+    modifyTitle(input);
+    modifyTitle("Resta um 🎮🎲")
+  }
+
+  setContext("modifyTitle", endLoading);
+
 </script>
 
-<!--
-  TODO: move this to another component
--->
 <style>
   
   h2 {
@@ -14,7 +23,8 @@
   page {
     position: absolute;
     margin: auto;
-/*    height: 100%; */
+    min-width: 600px;
+    top: 0;
     right: 15%;
     left: 15%;
 
@@ -23,17 +33,11 @@
     
     pointer-events: none;
   }
-
-  @media (min-width: 640px) {
-    page {
-      max-width: none;
-    }
-  }
 </style>
 
 
 <Background />
 
 <page>
-  <h2>Resta um dos irmão 😎</h2>
+  <h2>{title}</h2>
 </page>
