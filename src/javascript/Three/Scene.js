@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { gsap } from 'gsap';
-import * as datgui from 'dat.gui';
+import * as dat from 'dat.gui';
 
 import Resources from '@/javascript/Three/Resources';
 import Ticker from '@/javascript/Three/Ticker';
@@ -31,14 +31,6 @@ export default class {
     directional.position.y += 2
     scene.add(directional)
 
-    if (isDebugMode) {
-      const directionalHelper = new THREE.DirectionalLightHelper(directional);
-      scene.add(directionalHelper)
-      let lightHelper = new THREE.AxesHelper(0.5)
-      lightHelper.position.add(directional.position)
-      scene.add(lightHelper)
-    }
-
     // Data
     const sizes = {
       width: window.innerWidth,
@@ -66,6 +58,7 @@ export default class {
     // Animate
     const ticker = new Ticker();
     ticker.addOnTickEvent(render);
+    // ticker.addOnTickEvent(() => console.log(camera.position));
     ticker.tick();
 
 
@@ -119,7 +112,8 @@ export default class {
     
     scene.background = resources.items["skybox"];
     
-    camera.position.set(9.8, 9.5, 5.2);
+    camera.position.set(9.61, 7.76, 4.35);
+    camera.lookAt(new THREE.Vector3(0, -2, 0));
 
 
     if (isDebugMode) {
@@ -142,7 +136,7 @@ export default class {
       0, 0, 1, 1, 1, 0, 0,
       0, 0, 1, 1, 1, 0, 0,
       1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 0, 1, 1, 1,
+      1, 1, 1, 2, 1, 1, 1,
       1, 1, 1, 1, 1, 1, 1,
       0, 0, 1, 1, 1, 0, 0,
       0, 0, 1, 1, 1, 0, 0,
@@ -151,13 +145,11 @@ export default class {
     /** @type {THREE.Group} */
     const rootBoard = resources.items["board"].scene;
     scene.add(rootBoard);
-    rootBoard.traverse(obj => {
-      if (obj.type === "Mesh") {
-        // obj.material = new THREE.MeshMatcapMaterial({ matcap: resources.items["skyMatcap"] });
-        // obj.material = new THREE.MeshStandardMaterial({ });
+    // rootBoard.traverse(obj => {
+    //   if (obj.type === "Mesh") {
 
-      }
-    })
+    //   }
+    // })
 
     /** @type {THREE.Group} */
     const rootPiece = resources.items["piece"].scene;
@@ -165,7 +157,7 @@ export default class {
     for (let i = 0; i<7; i++) {
       for (let j = 0; j<7; j++) {
         const index = i*7+j;
-        if (boardTemplate[index]) {
+        if (boardTemplate[index] === 1) {
           const x = i-3;
           const z = j-3;
           rootPiece.position.set(x, 0, z);
@@ -177,15 +169,41 @@ export default class {
 
     // Debug
     if (isDebugMode) {
+      const gui = new dat.GUI();
+
       const helper = new THREE.AxesHelper(100);
       scene.add(helper);
+      
+      const directionalHelper = new THREE.DirectionalLightHelper(directional);
+      scene.add(directionalHelper)
+      let lightHelper = new THREE.AxesHelper(0.5)
+      lightHelper.position.add(directional.position)
+      scene.add(lightHelper)
+
+      const debugObj = {
+        cameraFocus: {
+          x: 0, y: 0, z: 0
+        }
+      }
+      
+      gui.add(camera.position, "x").min(0).max(20);
+      gui.add(camera.position, "y").min(0).max(20);
+      gui.add(camera.position, "z").min(0).max(20);
+      gui.add(debugObj.cameraFocus, "x").min(-10).max(10).onChange(updateCameraFocus);
+      gui.add(debugObj.cameraFocus, "y").min(-10).max(10).onChange(updateCameraFocus);
+      gui.add(debugObj.cameraFocus, "z").min(-10).max(10).onChange(updateCameraFocus);
+      
+      function updateCameraFocus() {
+        camera.lookAt(new THREE.Vector3(
+          debugObj.cameraFocus.x,
+          debugObj.cameraFocus.y,
+          debugObj.cameraFocus.z,
+        ));
+      }
     }
   }
 
 }
-// "Resta um 🎮🎲"
-
-
 
 
 function gradTexture(color) {
@@ -268,5 +286,3 @@ function addOnClickBouncyAnimation(mesh) {
     isJumping = false;
   });
 }
-
-
