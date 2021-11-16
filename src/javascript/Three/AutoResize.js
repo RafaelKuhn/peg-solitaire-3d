@@ -1,4 +1,4 @@
-export function autoResize(sizes, camera, renderer) {
+export default function autoResize(sizes, camera, renderer) {
   function resize() {
     // Update sizes
     sizes.width = window.innerWidth

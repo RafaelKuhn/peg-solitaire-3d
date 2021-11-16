@@ -32,7 +32,6 @@ export default class {
 
     this.#onProgress = onProgress;
 
-    // TODO: loaders by type
     this.#textureLoader = new TextureLoader();
     this.#cubeTextureLoader = new CubeTextureLoader();
     this.#glbLoader = new GLTFLoader();
@@ -41,6 +40,7 @@ export default class {
 
   async loadResources() {
 
+    // TODO: better async code needed here for a fancy loading screen
     this.#loadersByType = {
       "texture": this.#loadTexture,
       "cubemap": this.#loadCubemap,

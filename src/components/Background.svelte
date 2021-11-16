@@ -1,5 +1,5 @@
 <script>
-  import { getContext, onMount } from 'svelte';
+  import { getContext, onMount } from 'svelte'
   import Scene from '@/javascript/Three/Scene'
 
   let canvas;
@@ -13,9 +13,5 @@
   
   
 </script>
-
-<style>
-  
-</style>
 
 <canvas bind:this={canvas}></canvas>
