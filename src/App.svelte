@@ -1,43 +1,25 @@
 <script>
-  import { setContext } from 'svelte';
   import Background from "@/components/Background.svelte";
+  import TopPanel from '@/components/TopPanel.svelte';
+import BottomPanel from "./components/BottomPanel.svelte";
 
-  let title = "Carregando...";
+  // TODO: make it call child function instead of this mess
+  // setContext(contextKeys.functions.END_LOADING_SCREEN, endLoading);
+
+  /** @type {Background} */ let background;
   
-  const modifyTitle = input => title = input;
-  const endLoading = input => {
-    modifyTitle(input);
-    modifyTitle("Resta um 🎮🎲")
+  let isLoaded = false;
+  function setIsLoaded() {
+    isLoaded = true;
   }
-
-  setContext("modifyTitle", endLoading);
+  // let isLoaded = background.isLoaded;
 
 </script>
 
-<style>
-  
-  h2 {
-    color: white;
-  }
 
-  page {
-    position: absolute;
-    margin: auto;
-    min-width: 600px;
-    top: 0;
-    right: 15%;
-    left: 15%;
+<TopPanel />
+<Background bind:this={background} onLoadingEnd={setIsLoaded} />
 
-    background-color: #720b9880;
-    text-align: center;
-    
-    pointer-events: none;
-  }
-</style>
-
-
-<Background />
-
-<page>
-  <h2>{title}</h2>
-</page>
+{#if isLoaded}
+  <BottomPanel onPlayButtonClick={background.startGame} />
+{/if}

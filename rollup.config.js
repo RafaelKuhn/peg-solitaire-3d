@@ -49,7 +49,7 @@ export default {
 		}),
 
     alias({
-      resolve: ['.jsx', '.js', '.svelte'], // optional, by default this will just look for .js files or folders
+      resolve: ['.jsx', '.js', '.svelte', '.css'], // optional, by default this will just look for .js files or folders
       entries: [
         { find: '@', replacement: path.resolve(__dirname, 'src') },
       ]

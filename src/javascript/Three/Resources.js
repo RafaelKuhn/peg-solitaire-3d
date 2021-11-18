@@ -62,7 +62,9 @@ export default class {
 
   #makeProgress = () => {
     this.#amountLoaded++;
-    this.#onProgress(this.#amountLoaded/this.#amountToLoad);
+    
+    if (this.#onProgress)
+      this.#onProgress(this.#amountLoaded/this.#amountToLoad);
   }
 
 

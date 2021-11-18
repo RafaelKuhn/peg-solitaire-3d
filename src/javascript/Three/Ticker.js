@@ -2,8 +2,8 @@ import { Clock } from "three";
 
 export default class {
 
-  #clock;
-  #events;
+  /** @type {Clock} */ #clock;
+  /** @type {Array} */ #events;
 
   constructor() {
     this.#events = []
@@ -22,6 +22,10 @@ export default class {
 
   getElapsedTime() {
     return this.#clock.getElapsedTime();
+  }
+
+  getDeltaTime() {
+    return this.#clock.getDelta();
   }
   
 

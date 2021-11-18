@@ -1,17 +1,25 @@
 <script>
-  import { getContext, onMount } from 'svelte'
+  import { onMount } from 'svelte'
+  
   import Scene from '@/javascript/Three/Scene'
 
-  let canvas;
+  /** @type {HTMLCanvasElement} */ let canvas;
+  /** @type {Scene} */ let scene;
 
-  const modifyTitle = getContext("modifyTitle");
+  export let onLoadingEnd;
 
   onMount(() => {
-    const scene = new Scene();
-    scene.startScene(canvas, modifyTitle);
+    scene = new Scene();
+    scene.loadScene(canvas)
+      .then(() => onLoadingEnd());
   })
+
+  export function startGame() {
+    scene.startGame();
+  } 
   
   
 </script>
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas}>
+</canvas>

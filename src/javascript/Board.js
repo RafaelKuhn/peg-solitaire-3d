@@ -3,20 +3,21 @@ import * as THREE from 'three';
 export default class Board {
   
   constructor(scene, rootPiece, rootBoard) {
-    
+
     /** @type {THREE.Group} */
     this.rootPiece = rootPiece;
+
     /** @type {THREE.Group} */
-    this.rootBoard = rootBoard;
+    this.boardObj = rootBoard;
 
     scene.add(rootBoard);
 
-    this.piecesParent = new THREE.Group();
-    this.piecesParent.scale.z = -1;
-    scene.add(this.piecesParent);
+    this.piecesObj = new THREE.Group();
+    this.piecesObj.scale.z = -1;
+    scene.add(this.piecesObj);
   }
 
-  initBoard(templateBoard) {
+  setupPieces(templateBoard) {
     this.pieces = this.#duplicateMatrix(templateBoard);
 
     for (let y = 0; y<7; y++) {
@@ -28,7 +29,7 @@ export default class Board {
           const piece = this.rootPiece.clone();
           piece.position.set(xWorldPos, 0, zWorldPos);
           
-          this.piecesParent.add(piece);
+          this.piecesObj.add(piece);
           
           this.pieces[y][x] = piece;
         }

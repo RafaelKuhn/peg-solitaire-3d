@@ -11,6 +11,8 @@ import Board from "@/javascript/Board";
 
 import { TeapotGeometry } from '@/javascript/Three/Geometries/TeapotGeometry';
 
+import * as Stores from "@/javascript/Svelte/Stores";
+
 const TAU = 6.283185;
 const HALF_TAU = TAU * 0.5;
 const AN_EIGTH = 0.125;
@@ -28,9 +30,14 @@ export default class {
       [2, 2, 1, 1, 1, 2, 2],
     ];
     
-  }
+  } 
 
-  async startScene(canvas, onLoadingScreenEnd) {
+  async loadScene(canvas) {
+
+    const isDebugMode = window.location.hash === "#debug";
+
+    Stores.pageTitle.update(() => "Carregando...");
+
     const scene = new THREE.Scene();
 
     // Lights
@@ -72,7 +79,7 @@ export default class {
     ticker.tick();
 
 
-    // TODO: loading screen class
+    // TODO: loading screen abstraction
     // Loading screen
     camera.position.set(6, 4, 0);
     camera.lookAt(new THREE.Vector3(0, 2, 0));
@@ -95,10 +102,9 @@ export default class {
     scene.add( back );
     // end loading screen
 
-
     // Resources
     const resources = new Resources(
-      (progress) => console.log(`loading ${progress}`)
+      isDebugMode ? progress => console.log(`loading ${progress}`) : null
     );
 
     await resources.loadResources();
@@ -114,35 +120,33 @@ export default class {
     back.material.dispose();
     scene.remove(back);
     
-    onLoadingScreenEnd();
+    Stores.pageTitle.update(() => "Resta Um - Força Bruta 🎮🎲");
     // clean loading screen end
 
-    
+    // post loading screen
     scene.background = resources.items["skybox"];
-    
     camera.position.set(9.61, 7.76, 4.35);
     const sceneFocus = new THREE.Vector3(0, -2, 0);
     camera.lookAt(sceneFocus);
+    // post loading screen end
 
 
 
-    /** @type {THREE.Group} */
+
     const rootBoard = resources.items["board"].scene;
-
-    /** @type {THREE.Group} */
     const rootPiece = resources.items["piece"].scene;
     
-    const board = new Board(scene, rootPiece, rootBoard);
-    board.initBoard(this.boardTemplate);
+    /** @type {Board} */
+    this.board = new Board(scene, rootPiece, rootBoard);
+    this.board.setupPieces(this.boardTemplate);
 
-
-    // TODO: board logic class, brute force strategy
-    board.movePiece(3, 1, 3, 3);
-    board.movePiece(1, 2, 3, 2);
-
+    ticker.addOnTickEvent( () => {
+      const speed = 0.003;// 60 * 0.003 * ticker.getDeltaTime();
+      this.board.boardObj.rotateY(speed)
+      this.board.piecesObj.rotateY(speed)
+    })
 
     // Debug
-    const isDebugMode = window.location.hash === "#debug";
     if (isDebugMode) {
       const controls = new OrbitControls(camera, canvas);
       controls.target = sceneFocus;
@@ -164,8 +168,16 @@ export default class {
       gui.add(camera.position, "z").min(0).max(20); 
     }
   }
+
+  startGame() {
+    this.board.movePiece(3, 1, 3, 3);
+    this.board.movePiece(1, 2, 3, 2);
+  }
+
+
 }
 
+// TODO: pensar alternativa pra esse cursed gambiarra code
 function gradientTexture(colorStopMatrix) {
   var c = document.createElement("canvas");
   var ct = c.getContext("2d");
