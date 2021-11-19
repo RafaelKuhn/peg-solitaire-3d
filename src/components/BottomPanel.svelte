@@ -1,5 +1,13 @@
 <style>
   background {
+    position: absolute;
+    margin: auto;
+    min-width: 600px;
+    right: 15%;
+    left: 15%;
+
+    text-align: center;
+
     background-color: transparent;
     height: 20%;
     bottom: 0;
