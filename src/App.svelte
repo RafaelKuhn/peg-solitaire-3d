@@ -1,25 +1,16 @@
 <script>
   import Background from "@/components/Background.svelte";
   import TopPanel from '@/components/TopPanel.svelte';
-import BottomPanel from "./components/BottomPanel.svelte";
-
-  // TODO: make it call child function instead of this mess
-  // setContext(contextKeys.functions.END_LOADING_SCREEN, endLoading);
+  import BottomPanel from "./components/BottomPanel.svelte";
 
   /** @type {Background} */ let background;
-  
-  let isLoaded = false;
-  function setIsLoaded() {
-    isLoaded = true;
-  }
-  // let isLoaded = background.isLoaded;
-
+  /** @type {boolean} */ let isLoaded = false;
 </script>
 
 
 <TopPanel />
-<Background bind:this={background} onLoadingEnd={setIsLoaded} />
-
+<Background on:sceneLoaded={() => isLoaded = true} bind:this={background} />
+ 
 {#if isLoaded}
-  <BottomPanel onPlayButtonClick={background.startGame} />
+  <BottomPanel on:playButtonClicked={() => background.scene.startGame()} />
 {/if}

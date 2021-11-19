@@ -1,25 +1,24 @@
-<script>
-  import "@/style/background.css";
-  import { pageTitle } from "@/javascript/Svelte/Stores";
-
-  let title = '';
-  pageTitle.subscribe(newTitle => title = newTitle);
-</script>
-
 <style>
-  h2 {
-    color: aliceblue;
-  }
-  
   background {
-    background-color: #720b98bd;
+    position: absolute;
+    margin: auto;
+    min-width: 600px;
+    right: 15%;
+    left: 15%;
+
+    text-align: center;
+
     top: 0;
-    /* border-radius: 0, 0, 30px, 30px; */
-     border-bottom-left-radius: 30px;
+    background-color: #720b98bd;
+    border-bottom-left-radius: 30px;
     border-bottom-right-radius: 30px;
   }
 </style>
 
+<script>
+  import { pageTitle } from '@/javascript/Svelte/Stores';
+</script>
+
 <background>
-  <h2>{title}</h2>
+  <h2>{$pageTitle}</h2>
 </background>

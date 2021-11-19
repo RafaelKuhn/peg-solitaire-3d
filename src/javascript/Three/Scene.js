@@ -12,6 +12,7 @@ import Board from "@/javascript/Board";
 import { TeapotGeometry } from '@/javascript/Three/Geometries/TeapotGeometry';
 
 import * as Stores from "@/javascript/Svelte/Stores";
+import { changeSleepAmount, config, initBruteForce, restaUm } from '../BruteForce';
 
 const TAU = 6.283185;
 const HALF_TAU = TAU * 0.5;
@@ -35,6 +36,9 @@ export default class {
   async loadScene(canvas) {
 
     const isDebugMode = window.location.hash === "#debug";
+    
+    // mais gambiarra...
+    this.isDebugMode = isDebugMode;
 
     Stores.pageTitle.update(() => "Carregando...");
 
@@ -140,11 +144,13 @@ export default class {
     this.board = new Board(scene, rootPiece, rootBoard);
     this.board.setupPieces(this.boardTemplate);
 
-    ticker.addOnTickEvent( () => {
-      const speed = 0.003;// 60 * 0.003 * ticker.getDeltaTime();
-      this.board.boardObj.rotateY(speed)
-      this.board.piecesObj.rotateY(speed)
-    })
+    if (!isDebugMode) {
+      ticker.addOnTickEvent( () => {
+        const speed = 0.003;// 60 * 0.003 * ticker.getDeltaTime();
+        this.board.boardObj.rotateY(speed)
+        this.board.piecesObj.rotateY(speed)
+      })
+    }
 
     // Debug
     if (isDebugMode) {
@@ -169,9 +175,25 @@ export default class {
     }
   }
 
-  startGame() {
-    this.board.movePiece(3, 1, 3, 3);
-    this.board.movePiece(1, 2, 3, 2);
+  async startGame() {
+    
+    initBruteForce(this.board);
+
+    // test
+    // this.board.movePiece(3, 1, 3, 3);
+    // this.board.putPieceAside(3, 2);
+    // this.board.movePiece(1, 2, 3, 2);
+    // this.board.putPieceAside(2, 2);
+    if (this.isDebugMode) {
+      changeSleepAmount(300);
+    } else if (window.location.hash === "#gotta-go-fast") {
+      console.log("GOTTA GO FAST");
+      changeSleepAmount(0);
+    } else {
+      changeSleepAmount(100);
+    }
+
+    await restaUm();
   }
 
 

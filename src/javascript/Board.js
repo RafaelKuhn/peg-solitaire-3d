@@ -15,6 +15,9 @@ export default class Board {
     this.piecesObj = new THREE.Group();
     this.piecesObj.scale.z = -1;
     scene.add(this.piecesObj);
+    
+    /** @type {Array<THREE.Group>} */
+    this.piecesAside = [];
   }
 
   setupPieces(templateBoard) {
@@ -39,25 +42,35 @@ export default class Board {
 
   movePiece(pieceX, pieceY, newPieceX, newPieceY) {
 
-    /** @type {THREE.Mesh} */
+    if (window.location.hash === "#debug")
+      this.#printBoard(this.pieces);
+
+    /** @type {THREE.Group} */
     const piece = this.pieces[pieceY][pieceX];
-
-    const medianX = (newPieceX+pieceX)/2;
-    const medianY = (newPieceY+pieceY)/2;
-
-    /** @type {THREE.Mesh} */
-    const pieceToRemove = this.pieces[medianY][medianX];
     
     const newPiecePos = this.#index2DToWorldPosition(newPieceX, newPieceY);
     piece.position.copy(newPiecePos);
-    
-    pieceToRemove.position.set(-5, 0, -7);
-    this.#putAside(pieceToRemove);
-    
+        
     // update pieces array
     this.pieces[newPieceY][newPieceX] = piece;
     this.pieces[pieceY][pieceX] = 0;
-    this.pieces[medianY][medianX] = 0;
+  }
+
+  putPieceAside(pieceX, pieceY) {
+    const pieceToRemove = this.pieces[pieceY][pieceX];
+    this.piecesAside.push({ piece: pieceToRemove, pos: pieceToRemove.position });
+
+    this.pieces[pieceY][pieceX] = 0;
+    this.#putAside(pieceToRemove);
+  }
+
+  putPieceBack(pieceX, pieceY) {
+    const pieceBack = this.piecesAside.pop();
+    this.pieces[pieceY][pieceX] = pieceBack.piece;
+
+    pieceBack.piece.position.copy(pieceBack.pos);
+    // gambiarrão
+    this.#deletedXPos -= 0.5;
   }
 
   /** @returns {THREE.Vector3} */
