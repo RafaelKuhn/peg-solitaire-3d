@@ -1,16 +1,4 @@
-<script>
-  import "@/style/background.css";
-
-  export let onPlayButtonClick;
-
-</script>
-
 <style>
-
-  h2 {
-    color: aliceblue;
-  }
-
   background {
     background-color: transparent;
     height: 20%;
@@ -23,6 +11,7 @@
     width: 70px;
     height: 70px;
     border-radius: 50%;
+    cursor: pointer;
   }
 
   img {
@@ -37,14 +26,23 @@
     align-items: center;
     flex-direction: column;
   }
-
 </style>
 
+<script>
+  import { createEventDispatcher } from "svelte";
+  
+  const dispatch = createEventDispatcher();
+  /** @type {HTMLButtonElement}*/ let button;
+</script>
+
+
 <background class="flex">
+  
   <h2>botão do sofrimento...</h2>
   
-  <button on:click|once={onPlayButtonClick}>    
+  <button bind:this={button} on:click|once={() => { dispatch("playButtonClicked"); button.style.cursor = "default" }}>
     <img src="https://www.pngfind.com/pngs/m/427-4277341_add-play-button-to-image-online-overlay-play.png"
     alt="play button" />
   </button>
+
 </background>

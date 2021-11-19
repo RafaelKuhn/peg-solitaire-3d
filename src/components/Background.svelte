@@ -1,25 +1,20 @@
+<svelte:options accessors/>
+
 <script>
-  import { onMount } from 'svelte'
-  
+  import { onMount, createEventDispatcher } from 'svelte'
   import Scene from '@/javascript/Three/Scene'
 
   /** @type {HTMLCanvasElement} */ let canvas;
-  /** @type {Scene} */ let scene;
-
-  export let onLoadingEnd;
+  /** @type {Scene} */ export let scene = null;
+  
+  const dispatch = createEventDispatcher();
 
   onMount(() => {
     scene = new Scene();
     scene.loadScene(canvas)
-      .then(() => onLoadingEnd());
+      .then(() => dispatch("sceneLoaded"));
   })
-
-  export function startGame() {
-    scene.startGame();
-  } 
-  
   
 </script>
 
-<canvas bind:this={canvas}>
-</canvas>
+<canvas bind:this={canvas}/>
