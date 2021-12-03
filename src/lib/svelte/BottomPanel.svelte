@@ -1,3 +1,10 @@
+<script>
+  import { createEventDispatcher } from "svelte";
+  
+  const dispatch = createEventDispatcher();
+  /** @type {HTMLButtonElement}*/ let button;
+</script>
+
 <style>
   background {
     position: absolute;
@@ -35,14 +42,6 @@
     flex-direction: column;
   }
 </style>
-
-<script>
-  import { createEventDispatcher } from "svelte";
-  
-  const dispatch = createEventDispatcher();
-  /** @type {HTMLButtonElement}*/ let button;
-</script>
-
 
 <background class="flex">
   

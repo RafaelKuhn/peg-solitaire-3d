@@ -1,16 +1,16 @@
-<script>
-  import Background from "@/components/Background.svelte";
-  import TopPanel from '@/components/TopPanel.svelte';
-  import BottomPanel from "./components/BottomPanel.svelte";
+<script lang="ts">
+  import Background from "$lib/svelte/Background.svelte";
+  import TopPanel from '$lib/svelte/TopPanel.svelte';
+  import BottomPanel from "$lib/svelte/BottomPanel.svelte";
 
-  /** @type {Background} */ let background;
+  let background: Background;
   /** @type {boolean} */ let isLoaded = false;
 </script>
 
-
-<TopPanel />
 <Background on:sceneLoaded={() => isLoaded = true} bind:this={background} />
- 
+  
 {#if isLoaded}
+  <TopPanel />
+  
   <BottomPanel on:playButtonClicked={() => background.scene.startGame()} />
 {/if}

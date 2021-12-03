@@ -1,24 +1,25 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
-import * as dat from 'dat.gui';
 
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-import Resources from '@/javascript/Three/Resources';
-import Ticker from '@/javascript/Three/Ticker';
-import autoResize from "@/javascript/Three/AutoResize";
-import Board from "@/javascript/Board";
+import Resources from '$lib/three/Resources';
+import Ticker from '$lib/three/Ticker';
+import autoResize from "$lib/three/AutoResize";
+import Board from "$lib/three/Board";
 
-import { TeapotGeometry } from '@/javascript/Three/Geometries/TeapotGeometry';
-
-import * as Stores from "@/javascript/Svelte/Stores";
-import { changeSleepAmount, config, initBruteForce, restaUm } from '../BruteForce';
+import * as Stores from "$lib/svelte/Stores";
 
 const TAU = 6.283185;
 const HALF_TAU = TAU * 0.5;
 const AN_EIGTH = 0.125;
 
 export default class {
+
+    isDebugMode;
+    boardTemplate;
+
+    board;
 
   constructor() {
     this.boardTemplate = [
@@ -29,8 +30,7 @@ export default class {
       [1, 1, 1, 1, 1, 1, 1],
       [2, 2, 1, 1, 1, 2, 2],
       [2, 2, 1, 1, 1, 2, 2],
-    ];
-    
+    ];    
   } 
 
   async loadScene(canvas) {
@@ -40,7 +40,7 @@ export default class {
     // mais gambiarra...
     this.isDebugMode = isDebugMode;
 
-    Stores.pageTitle.update(() => "Carregando...");
+    Stores.pageTitle.update(() => ({ text: "Carregando..." }));
 
     const scene = new THREE.Scene();
 
@@ -88,21 +88,26 @@ export default class {
     camera.position.set(6, 4, 0);
     camera.lookAt(new THREE.Vector3(0, 2, 0));
 
-    const teapot = new THREE.Mesh(
-      new TeapotGeometry(1),
-      new THREE.MeshStandardMaterial({ color: 0xe06940 })
-    )
+    const teapot = new THREE.Mesh();
+
+    teapot.geometry = new THREE.IcosahedronBufferGeometry(TAU, 30);
+    teapot.material = new THREE.MeshStandardMaterial({ color: 0xe06940 })
+    
+
     teapot.rotation.set(0, 0.25 * TAU, 0);
     teapot.position.set(0, 2, 0)
     scene.add(teapot);
   
     const buffgeoBack = new THREE.IcosahedronBufferGeometry(10,2);
-    const back = new THREE.Mesh( buffgeoBack, new THREE.MeshBasicMaterial({
-      map: gradientTexture([[0.75,0.6,0.4,0.25], ['#00111a', '#4b5f7f', '#34726e', '#34726e']]),
-      side:THREE.BackSide,
-      depthWrite: false,
-      fog:false
-    }));
+    const back = new THREE.Mesh(
+      buffgeoBack,
+      new THREE.MeshBasicMaterial({
+        map: gradientTexture([[0.75,0.6,0.4,0.25], ['#00111a', '#4b5f7f', '#34726e', '#34726e']]),
+        side:THREE.BackSide,
+        depthWrite: false,
+        fog:false
+      })
+    );
     scene.add( back );
     // end loading screen
 
@@ -114,17 +119,18 @@ export default class {
     await resources.loadResources();
     console.log("resources finished loading");
 
-
+// return;
 
     // clean loading screen
     teapot.geometry.dispose();
     teapot.material.dispose();
     scene.remove(teapot);
+
     back.geometry.dispose();
     back.material.dispose();
     scene.remove(back);
     
-    Stores.pageTitle.update(() => "Resta Um - Força Bruta 🎮🎲");
+    Stores.pageTitle.update(() => ({ text: "Resta Um - Força Bruta 🎮🎲"}));
     // clean loading screen end
 
     // post loading screen
@@ -158,7 +164,7 @@ export default class {
       controls.target = sceneFocus;
       controls.update();
 
-      const gui = new dat.GUI();
+      // const gui = new dat.GUI();
 
       const helper = new THREE.AxesHelper(100);
       scene.add(helper);
@@ -169,31 +175,14 @@ export default class {
       lightHelper.position.add(directional.position)
       scene.add(lightHelper)
       
-      gui.add(camera.position, "x").min(0).max(20);
-      gui.add(camera.position, "y").min(0).max(20);
-      gui.add(camera.position, "z").min(0).max(20); 
+      // gui.add(camera.position, "x").min(0).max(20);
+      // gui.add(camera.position, "y").min(0).max(20);
+      // gui.add(camera.position, "z").min(0).max(20); 
     }
   }
 
   async startGame() {
-    
-    initBruteForce(this.board);
-
-    // test
-    // this.board.movePiece(3, 1, 3, 3);
-    // this.board.putPieceAside(3, 2);
-    // this.board.movePiece(1, 2, 3, 2);
-    // this.board.putPieceAside(2, 2);
-    if (this.isDebugMode) {
-      changeSleepAmount(300);
-    } else if (window.location.hash === "#gotta-go-fast") {
-      console.log("GOTTA GO FAST");
-      changeSleepAmount(0);
-    } else {
-      changeSleepAmount(100);
-    }
-
-    await restaUm();
+    console.log("game started");
   }
 
 

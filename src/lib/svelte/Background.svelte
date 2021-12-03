@@ -1,11 +1,11 @@
 <svelte:options accessors/>
 
-<script>
+<script lang="ts">
   import { onMount, createEventDispatcher } from 'svelte'
-  import Scene from '@/javascript/Three/Scene'
+  import Scene from '$lib/three/Scene'
 
-  /** @type {HTMLCanvasElement} */ let canvas;
-  /** @type {Scene} */ export let scene = null;
+  let canvas: HTMLCanvasElement = null;
+  export let scene: Scene = null;
   
   const dispatch = createEventDispatcher();
 

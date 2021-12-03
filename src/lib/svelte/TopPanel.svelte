@@ -16,9 +16,9 @@
 </style>
 
 <script>
-  import { pageTitle } from '@/javascript/Svelte/Stores';
+  import { pageTitle } from '$lib/svelte/Stores';
 </script>
 
 <background>
-  <h2>{$pageTitle}</h2>
+  <h2>{$pageTitle.text}</h2>
 </background>
