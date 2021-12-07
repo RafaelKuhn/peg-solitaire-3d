@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as dat from 'dat.gui';
 import { gsap } from 'gsap';
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -16,10 +17,10 @@ const AN_EIGTH = 0.125;
 
 export default class {
 
-    isDebugMode;
-    boardTemplate;
+  isDebugMode: Boolean = false;
 
-    board;
+  boardTemplate: Array<Array<number>>;
+  board: Board;
 
   constructor() {
     this.boardTemplate = [
@@ -35,11 +36,7 @@ export default class {
 
   async loadScene(canvas) {
 
-    const isDebugMode = window.location.hash === "#debug";
-    
-    // mais gambiarra...
-    this.isDebugMode = isDebugMode;
-
+    this.isDebugMode = window.location.hash === "#debug";
     Stores.pageTitle.update(() => ({ text: "Carregando..." }));
 
     const scene = new THREE.Scene();
@@ -58,12 +55,8 @@ export default class {
     const mousePosition = { x: 0, y: 0 }
     window.addEventListener("mousemove", (evt) => {
       // cursor will go from 0 to 1.0 screen space
-      mousePosition.x = (evt.clientX / viewportSize.width)// - 0.5;
-      mousePosition.y = 1 - ((evt.clientY / viewportSize.height))// - 0.5);
-
-      // cursor will go from -0.5 to 0.5 screen space
-      // mousePosition.x = (evt.clientX / viewportSize.width) - 0.5;
-      // mousePosition.y = - ((evt.clientY / viewportSize.height) - 0.5);
+      mousePosition.x = (evt.clientX / viewportSize.width)
+      mousePosition.y = 1 - ((evt.clientY / viewportSize.height));
     })
 
     // Camera
@@ -76,31 +69,22 @@ export default class {
     // Adjust sizes, camera and renderer based on viewport dimensions
     autoResize(viewportSize, camera, renderer);
     
-    // Animate
+    // Tick functions
     const ticker = new Ticker();
     const render = () => renderer.render(scene, camera);
     ticker.addOnTickEvent(render);
     ticker.tick();
 
 
-    // TODO: loading screen abstraction
-    // Loading screen
-    camera.position.set(6, 4, 0);
-    camera.lookAt(new THREE.Vector3(0, 2, 0));
-
-    const teapot = new THREE.Mesh();
-
-    teapot.geometry = new THREE.IcosahedronBufferGeometry(TAU, 30);
-    teapot.material = new THREE.MeshStandardMaterial({ color: 0xe06940 })
     
 
-    teapot.rotation.set(0, 0.25 * TAU, 0);
-    teapot.position.set(0, 2, 0)
-    scene.add(teapot);
+    // TODO: loading screen abstraction
+    // Loading screen
+    camera.position.set(6, 4, 2); // z 0
+    camera.lookAt(new THREE.Vector3(0, 2, 0));
   
-    const buffgeoBack = new THREE.IcosahedronBufferGeometry(10,2);
-    const back = new THREE.Mesh(
-      buffgeoBack,
+    const back: THREE.Mesh = new THREE.Mesh(
+      new THREE.IcosahedronBufferGeometry(10,2),
       new THREE.MeshBasicMaterial({
         map: gradientTexture([[0.75,0.6,0.4,0.25], ['#00111a', '#4b5f7f', '#34726e', '#34726e']]),
         side:THREE.BackSide,
@@ -108,29 +92,27 @@ export default class {
         fog:false
       })
     );
+
     scene.add( back );
     // end loading screen
 
+
     // Resources
     const resources = new Resources(
-      isDebugMode ? progress => console.log(`loading ${progress}`) : null
+      progress => console.log(`loading ${progress}`)
     );
 
+    // return Promise.reject();
     await resources.loadResources();
-    console.log("resources finished loading");
 
-// return;
+
 
     // clean loading screen
-    teapot.geometry.dispose();
-    teapot.material.dispose();
-    scene.remove(teapot);
-
     back.geometry.dispose();
-    back.material.dispose();
+    (back.material as THREE.MeshBasicMaterial).dispose();
     scene.remove(back);
     
-    Stores.pageTitle.update(() => ({ text: "Resta Um - Força Bruta 🎮🎲"}));
+    Stores.pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
     // clean loading screen end
 
     // post loading screen
@@ -142,29 +124,19 @@ export default class {
 
 
 
-
     const rootBoard = resources.items["board"].scene;
     const rootPiece = resources.items["piece"].scene;
     
-    /** @type {Board} */
     this.board = new Board(scene, rootPiece, rootBoard);
     this.board.setupPieces(this.boardTemplate);
 
-    if (!isDebugMode) {
-      ticker.addOnTickEvent( () => {
-        const speed = 0.003;// 60 * 0.003 * ticker.getDeltaTime();
-        this.board.boardObj.rotateY(speed)
-        this.board.piecesObj.rotateY(speed)
-      })
-    }
-
     // Debug
-    if (isDebugMode) {
+    if (this.isDebugMode) {
       const controls = new OrbitControls(camera, canvas);
-      controls.target = sceneFocus;
+      // controls.target = sceneFocus;
       controls.update();
 
-      // const gui = new dat.GUI();
+      const gui = new dat.GUI();
 
       const helper = new THREE.AxesHelper(100);
       scene.add(helper);
@@ -173,15 +145,31 @@ export default class {
       scene.add(directionalHelper)
       let lightHelper = new THREE.AxesHelper(0.5)
       lightHelper.position.add(directional.position)
-      scene.add(lightHelper)
+      scene.add(lightHelper);
       
-      // gui.add(camera.position, "x").min(0).max(20);
-      // gui.add(camera.position, "y").min(0).max(20);
-      // gui.add(camera.position, "z").min(0).max(20); 
+      // const updateBg = (obj) =>
+      // (back.material as THREE.MeshBasicMaterial).map = gradientTexture([[obj.st1, obj.st2, obj.st3], [obj.c1, obj.c2, obj.c3]])
+
+      // const helperObj = {
+      //   st1: 0.75,
+      //   st2: 0.6,
+      //   st3: 0.4,
+      //   c1: '#00111a',
+      //   c2: '#4b5f7f',
+      //   c3: '#34726e',
+      // }
+
+      // gui.add(helperObj, "st3").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
+      // gui.add(helperObj, "st2").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
+      // gui.add(helperObj, "st1").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
+
+      // gui.addColor(helperObj, "c3").onChange(() => updateBg(helperObj));
+      // gui.addColor(helperObj, "c2").onChange(() => updateBg(helperObj));
+      // gui.addColor(helperObj, "c1").onChange(() => updateBg(helperObj));
     }
   }
 
-  async startGame() {
+  startGame() {
     console.log("game started");
   }
 

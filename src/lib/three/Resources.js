@@ -5,7 +5,8 @@ export default class {
 
   items = {}
 
-  // TODO: all of these in the constructor, and create another class like 'loaderManager'
+  // TODO: decent logic and functional approach
+  // could make it take 5 seconds to load to preview changes in main app
   #cubemapEndings = [ "xpos", "xneg", "ypos", "yneg", "zpos", "zneg" ]
   #itemsToLoad = [
     { key: "skybox", type: "cubemap", path: "static/skybox/nebula_$.jpg" },

@@ -5,8 +5,8 @@
   import Scene from '$lib/three/Scene'
 
   let canvas: HTMLCanvasElement = null;
-  export let scene: Scene = null;
-  
+  let scene: Scene = null;
+   
   const dispatch = createEventDispatcher();
 
   onMount(() => {
@@ -14,6 +14,10 @@
     scene.loadScene(canvas)
       .then(() => dispatch("sceneLoaded"));
   })
+
+  export function startGame() {
+    scene.startGame();
+  }
   
 </script>
 

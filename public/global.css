@@ -61,6 +61,6 @@ button:focus {
 	border-color: #666;
 }
 
-h2 {
+h1, h2, h3 {
   color: aliceblue;
 }
