@@ -1,10 +1,8 @@
 <script>
 
-  function detectMobile() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }
+  import { Utils } from "./Utils";
 
-  let isMobile = detectMobile();
+  let isMobile = Utils.isMobile();
 
 </script>
 
@@ -32,16 +30,18 @@
   }
 
   img {
-    border-radius: 50%;
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;  
+    border-bottom-left-radius: 50%;
+    border-bottom-right-radius: 50%;
 
     object-fit: cover;
     object-position: 48% 0px;
     
-    /* transform: */
     animation-name: rotate-the-cat;
-    animation-duration: 3s;
+    animation-duration: 5s;
     animation-iteration-count: infinite;
-    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-timing-function: cubic-bezier(0.07, 1, 0.07, 1);
   }
 
   .img-mobile {
@@ -67,14 +67,11 @@
 
 <abs>
   <flex>
-
     <img
-      src="static/loading-cat.gif"
+      src="static/images/loading-cat.gif"
       alt="a loading cat funny gif"
-      class:img-mobile={isMobile}
-      class:img={!isMobile}
+      class="{isMobile ? 'img-mobile' : 'img'}"
     />
     <h2>Loading...</h2>
-
   </flex>
 </abs>
