@@ -1,8 +1,11 @@
+<script>
+  import { pageTitle } from '$lib/svelte/Stores';
+</script>
+
 <style>
   background {
     position: absolute;
     margin: auto;
-    min-width: 600px;
     right: 15%;
     left: 15%;
 
@@ -15,9 +18,6 @@
   }
 </style>
 
-<script>
-  import { pageTitle } from '$lib/svelte/Stores';
-</script>
 
 <background>
   <h2>{$pageTitle.text}</h2>

@@ -9,7 +9,8 @@ import Ticker from '$lib/three/Ticker';
 import autoResize from "$lib/three/AutoResize";
 import Board from "$lib/three/Board";
 
-import * as Stores from "$lib/svelte/Stores";
+import { pageTitle } from "$lib/svelte/Stores";
+import { Utils } from '$lib/svelte/Utils';
 
 const TAU = 6.283185;
 const HALF_TAU = TAU * 0.5;
@@ -37,7 +38,7 @@ export default class {
   async loadScene(canvas) {
 
     this.isDebugMode = window.location.hash === "#debug";
-    Stores.pageTitle.update(() => ({ text: "Carregando..." }));
+    pageTitle.update(() => ({ text: "Carregando..." }));
 
     const scene = new THREE.Scene();
 
@@ -112,7 +113,7 @@ export default class {
     (back.material as THREE.MeshBasicMaterial).dispose();
     scene.remove(back);
     
-    Stores.pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
+    pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
     // clean loading screen end
 
     // post loading screen
@@ -169,8 +170,8 @@ export default class {
     }
   }
 
-  startGame() {
-    console.log("game started");
+  restartGame() {
+    console.log("game restart");
   }
 
 

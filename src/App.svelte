@@ -6,17 +6,15 @@
 
   let background: Background;
   let isLoaded: boolean = false;
-
-  $: console.log("loaded? "+isLoaded);
   
 </script>
 
-<Background on:sceneLoaded={() => isLoaded = true} bind:this={background} />
+<Background bind:this={background} on:sceneLoaded={() => isLoaded = true} />
   
 {#if isLoaded}
   <TopPanel />
   
-  <BottomPanel on:playButtonClicked={ background.startGame } />
+  <BottomPanel on:resetButtonClicked={background.restartGame} />
 {:else}
   <LoadingScreen />
 {/if}

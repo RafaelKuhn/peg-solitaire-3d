@@ -1,15 +1,7 @@
-<script>
-  import { createEventDispatcher } from "svelte";
-  
-  const dispatch = createEventDispatcher();
-  /** @type {HTMLButtonElement}*/ let button;
-</script>
-
 <style>
-  background {
+  div {
     position: absolute;
     margin: auto;
-    min-width: 600px;
     right: 15%;
     left: 15%;
 
@@ -23,16 +15,33 @@
   button {
     margin: 0;
     padding: 0;
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    
     cursor: pointer;
+    outline: none;
+    border: none;
+    background-color: transparent;
+
+    /* background:  */
+    background-image: url("/static/images/restart-button2.png");
+    background-position: center;
+    background-size: 100%;
+    background-repeat: no-repeat;
+
+    /* animation */
+    transition: all .1s ease-out;
   }
 
-  img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%
+  button:hover {
+    transform: scale(1.04);
+  }
+
+  button:active {
+    transition: none;
+    background-image: url("/static/images/restart-button.png");
+    background-color: transparent;
+    border-color: transparent;
   }
 
   .flex {
@@ -41,15 +50,17 @@
     align-items: center;
     flex-direction: column;
   }
+
 </style>
 
-<background class="flex">
+<script>
+  import { createEventDispatcher } from "svelte";
   
-  <h2>botão do sofrimento...</h2>
-  
-  <button bind:this={button} on:click|once={() => { dispatch("playButtonClicked"); button.style.cursor = "default" }}>
-    <img src="https://www.pngfind.com/pngs/m/427-4277341_add-play-button-to-image-online-overlay-play.png"
-    alt="play button" />
-  </button>
+  const dispatch = createEventDispatcher();
+</script>
 
-</background>
+<div class="flex">
+    
+  <button on:click={() => dispatch("resetButtonClicked")} />
+
+</div>

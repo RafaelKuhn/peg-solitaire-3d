@@ -1,5 +1,3 @@
-<svelte:options accessors/>
-
 <script lang="ts">
   import { onMount, createEventDispatcher } from 'svelte'
   import Scene from '$lib/three/Scene'
@@ -15,8 +13,8 @@
       .then(() => dispatch("sceneLoaded"));
   })
 
-  export function startGame() {
-    scene.startGame();
+  export function restartGame() {
+    scene.restartGame();
   }
   
 </script>
