@@ -8,6 +8,7 @@ import Resources from '$lib/three/Resources';
 import Ticker from '$lib/three/Ticker';
 import autoResize from "$lib/three/AutoResize";
 import Board from "$lib/three/Board";
+import LoadingScreen from "$lib/three/LoadingScreen";
 
 import { pageTitle } from "$lib/svelte/Stores";
 import { Utils } from '$lib/svelte/Utils';
@@ -18,12 +19,33 @@ const AN_EIGTH = 0.125;
 
 export default class {
 
-  isDebugMode: Boolean = false;
+  // threejs logic
+  private scene: THREE.Scene;
+  private camera: THREE.Camera;
+  private ticker: Ticker;
+  
+  // game logic
+  private loadingScreen: LoadingScreen;
+  private board: Board;
+  private boardTemplate: Array<Array<number>>;
+  
+  // TODO: change these to another place, like 'browserData'
+  private mousePosition: THREE.Vector2;
+  private viewport: Viewport;
+  private isDebugMode: Boolean = false;
 
-  boardTemplate: Array<Array<number>>;
-  board: Board;
 
   constructor() {
+
+    this.scene = new THREE.Scene();
+    this.viewport = { width: window.innerWidth, height: window.innerHeight }
+    this.camera = new THREE.PerspectiveCamera(45, this.viewport.width / this.viewport.height, 0.1, 2000);
+
+    this.mousePosition = new THREE.Vector2(2000, 2000);
+
+    this.ticker = new Ticker();
+    this.loadingScreen = new LoadingScreen(this.camera, this.scene);
+
     this.boardTemplate = [
       [2, 2, 1, 1, 1, 2, 2],
       [2, 2, 1, 1, 1, 2, 2],
@@ -35,122 +57,69 @@ export default class {
     ];    
   } 
 
-  async loadScene(canvas) {
+  public async loadScene(canvas: HTMLCanvasElement) {
 
     this.isDebugMode = window.location.hash === "#debug";
     pageTitle.update(() => ({ text: "Carregando..." }));
 
-    const scene = new THREE.Scene();
-
-    // Lights
-    const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
-    scene.add(ambient);
-
-    const directional = new THREE.DirectionalLight( 0xeeeeff, 0.9 );
-    directional.position.z -= 3;
-    directional.position.y += 2;
-    scene.add(directional);
+    this.setupLights();
 
     // Data
-    const viewportSize = { width: window.innerWidth, height: window.innerHeight }
-    const mousePosition = { x: 0, y: 0 }
     window.addEventListener("mousemove", (evt) => {
       // cursor will go from 0 to 1.0 screen space
-      mousePosition.x = (evt.clientX / viewportSize.width)
-      mousePosition.y = 1 - ((evt.clientY / viewportSize.height));
+      this.mousePosition.x = evt.clientX/this.viewport.width * 2 - 1;
+      this.mousePosition.y = (1-evt.clientY/this.viewport.height) * 2 - 1;
     })
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(45, viewportSize.width / viewportSize.height, 0.1, 2000)
-    scene.add(camera)
+    this.scene.add(this.camera)
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true })
     
+    // TODO: change this for mobile
     // Adjust sizes, camera and renderer based on viewport dimensions
-    autoResize(viewportSize, camera, renderer);
+    autoResize(this.viewport, this.camera, renderer);
     
-    // Tick functions
-    const ticker = new Ticker();
-    const render = () => renderer.render(scene, camera);
-    ticker.addOnTickEvent(render);
-    ticker.tick();
+    this.ticker.pushOnTickEvent(() => renderer.render(this.scene, this.camera));
+    this.ticker.tick();
 
+    this.loadingScreen.show();
 
-    
-
-    // TODO: loading screen abstraction
-    // Loading screen
-    camera.position.set(6, 4, 2); // z 0
-    camera.lookAt(new THREE.Vector3(0, 2, 0));
-  
-    const back: THREE.Mesh = new THREE.Mesh(
-      new THREE.IcosahedronBufferGeometry(10,2),
-      new THREE.MeshBasicMaterial({
-        map: gradientTexture([[0.75,0.6,0.4,0.25], ['#00111a', '#4b5f7f', '#34726e', '#34726e']]),
-        side:THREE.BackSide,
-        depthWrite: false,
-        fog:false
-      })
-    );
-
-    scene.add( back );
-    // end loading screen
-
-
-    // Resources
-    const resources = new Resources(
-      progress => console.log(`loading ${progress}`)
-    );
-
-    // return Promise.reject();
+    const resources = new Resources(() => null);
     await resources.loadResources();
 
-
-
-    // clean loading screen
-    back.geometry.dispose();
-    (back.material as THREE.MeshBasicMaterial).dispose();
-    scene.remove(back);
-    
+    this.loadingScreen.dispose();
+    delete this.loadingScreen;
     pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
-    // clean loading screen end
 
     // post loading screen
-    scene.background = resources.items["skybox"];
-    camera.position.set(9.61, 7.76, 4.35);
+    this.scene.background = resources.items["skybox"];
+    this.camera.position.set(9.61, 7.76, 4.35);
     const sceneFocus = new THREE.Vector3(0, -2, 0);
-    camera.lookAt(sceneFocus);
+    this.camera.lookAt(sceneFocus);
     // post loading screen end
-
-
 
     const rootBoard = resources.items["board"].scene;
     const rootPiece = resources.items["piece"].scene;
     
-    this.board = new Board(scene, rootPiece, rootBoard);
+    this.board = new Board(this.scene, rootPiece, rootBoard);
     this.board.setupPieces(this.boardTemplate);
+
+    this.setupRaycaster();
 
     // Debug
     if (this.isDebugMode) {
-      const controls = new OrbitControls(camera, canvas);
-      // controls.target = sceneFocus;
+      const controls = new OrbitControls(this.camera, canvas);
+      controls.maxPolarAngle = TAU * 0.25;
+      controls.target = new THREE.Vector3(0, -2, 0);
       controls.update();
 
-      const gui = new dat.GUI();
-
       const helper = new THREE.AxesHelper(100);
-      scene.add(helper);
+      this.scene.add(helper);
       
-      const directionalHelper = new THREE.DirectionalLightHelper(directional);
-      scene.add(directionalHelper)
-      let lightHelper = new THREE.AxesHelper(0.5)
-      lightHelper.position.add(directional.position)
-      scene.add(lightHelper);
-      
+      // const gui = new dat.GUI();
       // const updateBg = (obj) =>
       // (back.material as THREE.MeshBasicMaterial).map = gradientTexture([[obj.st1, obj.st2, obj.st3], [obj.c1, obj.c2, obj.c3]])
-
       // const helperObj = {
       //   st1: 0.75,
       //   st2: 0.6,
@@ -159,36 +128,88 @@ export default class {
       //   c2: '#4b5f7f',
       //   c3: '#34726e',
       // }
-
       // gui.add(helperObj, "st3").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
       // gui.add(helperObj, "st2").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
       // gui.add(helperObj, "st1").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
-
       // gui.addColor(helperObj, "c3").onChange(() => updateBg(helperObj));
       // gui.addColor(helperObj, "c2").onChange(() => updateBg(helperObj));
       // gui.addColor(helperObj, "c1").onChange(() => updateBg(helperObj));
     }
   }
 
-  restartGame() {
+  public restartGame() {
     console.log("game restart");
   }
 
 
+  private setupRaycaster() {
+    const caster = new THREE.Raycaster();
+
+    const planeRaycastObject = this.createRaycastPlane();
+
+    let hit: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = null;
+
+    if (this.isDebugMode) {
+      const normalMaterial = new THREE.MeshNormalMaterial({ normalMapType: THREE.TangentSpaceNormalMap, wireframe: true });
+      planeRaycastObject.material = normalMaterial;
+
+      const ball = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 10, 10), normalMaterial);
+      this.scene.add(ball);
+
+      this.ticker.unshiftOnTickEvent(() => {
+        caster.setFromCamera(this.mousePosition, this.camera);
+        hit = caster.intersectObject(planeRaycastObject);
+  
+        if (hit.length !== 0)
+          ball.position.copy(hit[0].point);
+      })
+
+    } else {
+      this.ticker.unshiftOnTickEvent(() => {
+        caster.setFromCamera(this.mousePosition, this.camera);
+        hit = caster.intersectObject(planeRaycastObject);
+  
+        if (hit.length === 0) return;
+
+
+      })
+    }
+
+  }
+
+  private createRaycastPlane(): THREE.Mesh {
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(100, 100, 8, 8),
+      new THREE.MeshBasicMaterial({ alphaTest: 0, visible: false })
+    );
+    mesh.position.y = 0.4;
+    mesh.rotation.x = -0.25 * TAU;
+    this.scene.add(mesh);
+
+    return mesh;
+  }
+
+  private setupLights() {
+    const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
+    this.scene.add(ambient);
+
+    const directional = new THREE.DirectionalLight( 0xeeeeff, 0.9 );
+    directional.position.z -= 3;
+    directional.position.y += 2;
+    this.scene.add(directional)
+
+    if (this.isDebugMode) {
+      const directionalHelper = new THREE.DirectionalLightHelper(directional);
+      this.scene.add(directionalHelper)
+      let lightHelper = new THREE.AxesHelper(0.5)
+      lightHelper.position.add(directional.position)
+      this.scene.add(lightHelper);
+    }
+  }
+
 }
 
-// TODO: pensar alternativa pra esse cursed gambiarra code
-function gradientTexture(colorStopMatrix) {
-  var c = document.createElement("canvas");
-  var ct = c.getContext("2d");
-  var size = 1024;
-  c.width = 16; c.height = size;
-  var gradient = ct.createLinearGradient(0,0,0,size);
-  var i = colorStopMatrix[0].length;
-  while(i--) { gradient.addColorStop(colorStopMatrix[0][i],colorStopMatrix[1][i]); }
-  ct.fillStyle = gradient;
-  ct.fillRect(0,0,16,size);
-  var texture = new THREE.Texture(c);
-  texture.needsUpdate = true;
-  return texture;
-}
+interface Viewport {
+  width: number,
+  height: number
+};
