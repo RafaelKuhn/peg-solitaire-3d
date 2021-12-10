@@ -39,6 +39,7 @@
 
   button:active {
     transition: none;
+    /* TODO: make images base64 for instant reloading */
     background-image: url("/static/images/restart-button.png");
     background-color: transparent;
     border-color: transparent;

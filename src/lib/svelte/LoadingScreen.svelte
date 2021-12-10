@@ -26,6 +26,8 @@
   }
   
   h2 {
+    bottom: 0.3em;
+    position: absolute;
     z-index: 1;
   }
 

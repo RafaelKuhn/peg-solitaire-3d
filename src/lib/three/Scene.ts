@@ -7,7 +7,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Resources from '$lib/three/Resources';
 import Ticker from '$lib/three/Ticker';
 import autoResize from "$lib/three/AutoResize";
-import Board from "$lib/three/Board";
+import BoardLogic from "$lib/three/BoardLogic";
 import LoadingScreen from "$lib/three/LoadingScreen";
 
 import { pageTitle } from "$lib/svelte/Stores";
@@ -26,8 +26,7 @@ export default class {
   
   // game logic
   private loadingScreen: LoadingScreen;
-  private board: Board;
-  private boardTemplate: Array<Array<number>>;
+  private boardLogic: BoardLogic;
   
   // TODO: change these to another place, like 'browserData'
   private mousePosition: THREE.Vector2;
@@ -45,16 +44,6 @@ export default class {
 
     this.ticker = new Ticker();
     this.loadingScreen = new LoadingScreen(this.camera, this.scene);
-
-    this.boardTemplate = [
-      [2, 2, 1, 1, 1, 2, 2],
-      [2, 2, 1, 1, 1, 2, 2],
-      [1, 1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 0, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1],
-      [2, 2, 1, 1, 1, 2, 2],
-      [2, 2, 1, 1, 1, 2, 2],
-    ];    
   } 
 
   public async loadScene(canvas: HTMLCanvasElement) {
@@ -73,9 +62,7 @@ export default class {
 
     this.scene.add(this.camera)
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true })
-    
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true })    
     // TODO: change this for mobile
     // Adjust sizes, camera and renderer based on viewport dimensions
     autoResize(this.viewport, this.camera, renderer);
@@ -92,26 +79,36 @@ export default class {
     delete this.loadingScreen;
     pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
 
-    // post loading screen
     this.scene.background = resources.items["skybox"];
     this.camera.position.set(9.61, 7.76, 4.35);
     const sceneFocus = new THREE.Vector3(0, -2, 0);
     this.camera.lookAt(sceneFocus);
-    // post loading screen end
 
     const rootBoard = resources.items["board"].scene;
     const rootPiece = resources.items["piece"].scene;
     
-    this.board = new Board(this.scene, rootPiece, rootBoard);
-    this.board.setupPieces(this.boardTemplate);
+    this.boardLogic = new BoardLogic(this.scene, rootPiece, rootBoard);
+    this.boardLogic.setupPieces();
 
     this.setupRaycaster();
+
+    // do movement
+    this.boardLogic.movePiece(3, 1, 3, 3)
+    this.boardLogic.putPieceAside(3, 2);
+
+    // undo movement
+    this.boardLogic.putPieceBack(3, 2);
+    this.boardLogic.movePiece(3, 3, 3, 1)
+
+    // check available movements
+    // highlight closest one to raycast hit
+    // add listener on mouse up, makes the play at closest 
 
     // Debug
     if (this.isDebugMode) {
       const controls = new OrbitControls(this.camera, canvas);
       controls.maxPolarAngle = TAU * 0.25;
-      controls.target = new THREE.Vector3(0, -2, 0);
+      controls.target = sceneFocus;
       controls.update();
 
       const helper = new THREE.AxesHelper(100);
@@ -153,7 +150,8 @@ export default class {
       const normalMaterial = new THREE.MeshNormalMaterial({ normalMapType: THREE.TangentSpaceNormalMap, wireframe: true });
       planeRaycastObject.material = normalMaterial;
 
-      const ball = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 10, 10), normalMaterial);
+      const ball = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 7, 7), new THREE.MeshBasicMaterial());
+      ball.scale.set(0.1, 0.1, 0.1);
       this.scene.add(ball);
 
       this.ticker.unshiftOnTickEvent(() => {
@@ -168,10 +166,6 @@ export default class {
       this.ticker.unshiftOnTickEvent(() => {
         caster.setFromCamera(this.mousePosition, this.camera);
         hit = caster.intersectObject(planeRaycastObject);
-  
-        if (hit.length === 0) return;
-
-
       })
     }
 
@@ -179,7 +173,7 @@ export default class {
 
   private createRaycastPlane(): THREE.Mesh {
     const mesh = new THREE.Mesh(
-      new THREE.PlaneBufferGeometry(100, 100, 8, 8),
+      new THREE.PlaneBufferGeometry(10, 10, 1, 1),
       new THREE.MeshBasicMaterial({ alphaTest: 0, visible: false })
     );
     mesh.position.y = 0.4;
