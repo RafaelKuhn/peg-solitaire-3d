@@ -6,9 +6,10 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import Resources from '$lib/three/Resources';
 import Ticker from '$lib/three/Ticker';
-import autoResize from "$lib/three/AutoResize";
 import BoardLogic from "$lib/three/BoardLogic";
 import LoadingScreen from "$lib/three/LoadingScreen";
+
+import autoResize from "$lib/three/AutoResize";
 
 import { pageTitle } from "$lib/svelte/Stores";
 import { Utils } from '$lib/svelte/Utils';
@@ -21,7 +22,7 @@ export default class {
 
   // threejs logic
   private scene: THREE.Scene;
-  private camera: THREE.Camera;
+  private camera: THREE.PerspectiveCamera;
   private ticker: Ticker;
   
   // game logic
@@ -35,7 +36,6 @@ export default class {
 
 
   constructor() {
-
     this.scene = new THREE.Scene();
     this.viewport = { width: window.innerWidth, height: window.innerHeight }
     this.camera = new THREE.PerspectiveCamera(45, this.viewport.width / this.viewport.height, 0.1, 2000);
@@ -63,11 +63,12 @@ export default class {
     this.scene.add(this.camera)
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true })    
-    // TODO: change this for mobile
-    // Adjust sizes, camera and renderer based on viewport dimensions
-    autoResize(this.viewport, this.camera, renderer);
-    
-    this.ticker.pushOnTickEvent(() => renderer.render(this.scene, this.camera));
+  
+    const onTick = () => {
+      renderer.render(this.scene, this.camera)
+    }
+
+    this.ticker.pushOnTickEvent(onTick);
     this.ticker.tick();
 
     this.loadingScreen.show();
@@ -80,7 +81,8 @@ export default class {
     pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
 
     this.scene.background = resources.items["skybox"];
-    this.camera.position.set(9.61, 7.76, 4.35);
+    this.camera.position.set(10.571, 8.536, 4.785); const test = new THREE.Vector3(9.61, 7.76, 4.35).multiplyScalar(1.1); console.log(test);
+  
     const sceneFocus = new THREE.Vector3(0, -2, 0);
     this.camera.lookAt(sceneFocus);
 
@@ -100,9 +102,13 @@ export default class {
     this.boardLogic.putPieceBack(3, 2);
     this.boardLogic.movePiece(3, 3, 3, 1)
 
+    // algorithm: 
     // check available movements
     // highlight closest one to raycast hit
     // add listener on mouse up, makes the play at closest 
+
+    // TODO: browserData class and functions
+    autoResize(this.viewport, this.camera, renderer);
 
     // Debug
     if (this.isDebugMode) {
@@ -113,24 +119,6 @@ export default class {
 
       const helper = new THREE.AxesHelper(100);
       this.scene.add(helper);
-      
-      // const gui = new dat.GUI();
-      // const updateBg = (obj) =>
-      // (back.material as THREE.MeshBasicMaterial).map = gradientTexture([[obj.st1, obj.st2, obj.st3], [obj.c1, obj.c2, obj.c3]])
-      // const helperObj = {
-      //   st1: 0.75,
-      //   st2: 0.6,
-      //   st3: 0.4,
-      //   c1: '#00111a',
-      //   c2: '#4b5f7f',
-      //   c3: '#34726e',
-      // }
-      // gui.add(helperObj, "st3").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
-      // gui.add(helperObj, "st2").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
-      // gui.add(helperObj, "st1").min(0).max(1).step(0.01).onChange(() => updateBg(helperObj));
-      // gui.addColor(helperObj, "c3").onChange(() => updateBg(helperObj));
-      // gui.addColor(helperObj, "c2").onChange(() => updateBg(helperObj));
-      // gui.addColor(helperObj, "c1").onChange(() => updateBg(helperObj));
     }
   }
 

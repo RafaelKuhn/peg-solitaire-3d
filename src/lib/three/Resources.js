@@ -15,8 +15,6 @@ export default class {
     { key: "piece", type: "glb", path: "static/models/piece.glb" },
   ]
   
-  #loadersByType;
-
   #amountToLoad = 0;
   #amountLoaded = 0;
   
@@ -42,7 +40,7 @@ export default class {
   async loadResources() {
 
     // TODO: better async code needed here for a fancy loading screen
-    this.#loadersByType = {
+    const loadersByType = {
       "texture": this.#loadTexture,
       "cubemap": this.#loadCubemap,
       "glb": this.#loadGLB,
@@ -51,12 +49,15 @@ export default class {
     const promises = [];
 
     for (const element of this.#itemsToLoad) {
-      const loadMethod = this.#loadersByType[element.type];
+      const loadMethod = loadersByType[element.type];
       if (loadMethod) {
         const loadPromise = loadMethod(element.key, element.path);
         promises.push(loadPromise);
       }
     }
+
+    // TODO: use enums and refactor to typescript
+    // const promises2 = this.#itemsToLoad.map(element => loadersByType[element.type](element.key, element.path))
 
     await Promise.all(promises);
   }

@@ -11,11 +11,12 @@ export default function autoResize(sizes, camera, renderer) {
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+    const ratio = window.innerHeight/window.innerWidth;
+    camera.fov = ratio < 1.4 ? 45 : 60;
   }
 
-  window.addEventListener('resize', () => {
-      resize();
-  })
-
+  window.addEventListener('resize', resize);
   resize();
+  window.dispatchEvent(new Event('resize'));
 }

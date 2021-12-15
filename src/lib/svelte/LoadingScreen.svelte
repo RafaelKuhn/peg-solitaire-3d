@@ -1,11 +1,3 @@
-<script>
-
-  import { Utils } from "./Utils";
-
-  let isMobile = Utils.isMobile();
-
-</script>
-
 <style>
   abs {
     position: absolute;
@@ -46,6 +38,15 @@
     animation-timing-function: cubic-bezier(0.07, 1, 0.07, 1);
   }
 
+  @keyframes rotate-the-cat {
+    0%, 100% {
+      transform: rotate(0deg) scale(0.8);
+    }
+    50% {
+      transform: rotate(360deg) scale(1.3);;
+    }
+  }
+
   .img-mobile {
     width: 200px;
     height: 200px;
@@ -56,23 +57,18 @@
     height: 500px;
   }
 
-  @keyframes rotate-the-cat {
-    0%, 100% {
-      transform: rotate(0deg) scale(0.8);
-    }
-    50% {
-      transform: rotate(360deg) scale(1.3);;
-    }
-  }
-
 </style>
+
+<script>
+  import { Utils } from "./Utils";
+</script>
 
 <abs>
   <flex>
     <img
       src="static/images/loading-cat.gif"
       alt="a loading cat funny gif"
-      class="{isMobile ? 'img-mobile' : 'img'}"
+      class="{Utils.IsMobile ? 'img-mobile' : 'img'}"
     />
     <h2>Loading...</h2>
   </flex>
