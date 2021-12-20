@@ -46,7 +46,7 @@
 
   button:active {
     transition: none;
-    /* TODO: make images base64 for instant reloading */
+    /* TODO: find a way to precache url("shit") so it flickers instantly when clicked */
     background-image: url("/static/images/restart-button.png");
     background-color: transparent;
     border-color: transparent;

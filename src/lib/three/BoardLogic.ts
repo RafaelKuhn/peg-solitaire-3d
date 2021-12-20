@@ -11,6 +11,10 @@ export default class BoardLogic {
   private boardTemplate: Array<Array<number>>;
 
 
+  // TODO: board animations class
+  private movableMaterial: THREE.MeshStandardMaterial;
+  private hoveredMaterial: THREE.MeshStandardMaterial;
+
   constructor(scene: THREE.Scene, rootPiece: THREE.Group, rootBoard: THREE.Group) {
 
     this.boardTemplate = [
@@ -25,25 +29,29 @@ export default class BoardLogic {
 
     this.rootPiece = rootPiece;
 
-    scene.add(rootBoard);
-
     this.piecesParent = new THREE.Group();
-    this.piecesParent.scale.z = -1;
-    scene.add(this.piecesParent);
     
     this.piecesAsideStack = [];
+
+    this.movableMaterial = new THREE.MeshStandardMaterial({ color: 0x4f86c5 })
+    this.hoveredMaterial = new THREE.MeshStandardMaterial({ color: "green" })
+
+    scene.add(this.piecesParent, rootBoard);
   }
 
+  // create pieces 3d objects in scene from boardTemplate
   public setupPieces() {
-    // create pieces 3d objects in scene from boardTemplate
     this.pieces = [
       [], [], [], [], [], [], []
     ]
     
-    for (let y = 0; y<7; y++) {
-      for (let x = 0; x<7; x++) {
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
 
-        if (this.boardTemplate[y][x] !== 1) continue;
+        if (this.boardTemplate[y][x] !== 1) {
+          this.pieces[y][x] = null;
+          continue;
+        }
         
         const piece = this.rootPiece.clone();
         const piecePosition = this.index2DToWorldPosition(x, y);
@@ -56,7 +64,81 @@ export default class BoardLogic {
     }
   }
 
-  movePiece(pieceX, pieceY, newPieceX, newPieceY) {
+  // TODO: game logic class perhasps
+  // could run 3x3, 3x7, 3x3 fors instead of 7x7
+  // return a instance of type 'movement'
+  public checkAvailableMovements(): Array<THREE.Group> {
+    const movements = new Array<THREE.Group>();
+    
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
+        // out of the center board, in the corners
+        if (this.isOutOfBoard(x, y)) continue;
+
+        const piece = this.pieces[y][x];
+        // piece is null, so it has a hole there
+        if (!piece) { continue; }
+
+        // can be moved right ?
+        if (this.isNotOutOfBoard(x+2, y) && this.pieces[y][x+1] !== null && this.pieces[y][x+2] === null) {
+          movements.push(this.pieces[y][x])
+        }
+
+        // can be moved left ?
+        if (this.isNotOutOfBoard(x-2, y) && this.pieces[y][x-1] !== null && this.pieces[y][x-2] === null) {
+          movements.push(this.pieces[y][x])
+        }
+
+        // can be moved up ? (in the declaration, y- is up)
+        if (this.isNotOutOfBoard(x, y-2) && this.pieces[y-1][x] !== null && this.pieces[y-2][x] === null) {
+          movements.push(this.pieces[y][x])
+        }
+
+        // can be moved down ?
+        if (this.isNotOutOfBoard(x, y+2) && this.pieces[y+1][x] !== null && this.pieces[y+2][x] === null) {
+          movements.push(this.pieces[y][x])
+        }
+      }
+    }
+
+    return movements;
+  }
+
+  public getClosest(hitPos: THREE.Vector3, pieces: Array<THREE.Group>): THREE.Group {
+    let closest = pieces[0];
+    let closestDist: number = hitPos.distanceTo(closest.position);
+
+    for (let i = 1; i < pieces.length; i++) {
+      const piece = pieces[i];
+      const pieceDist = hitPos.distanceTo(piece.position);
+      if (pieceDist < closestDist) {
+        closestDist = pieceDist;
+        closest = piece;
+      }
+    }
+
+    return closest;
+  }
+
+
+  // TODO: board visuals class
+  public colorPiecesAsMovable(pieces: THREE.Group[]): void {
+    pieces.forEach(piece => this.colorPieceAsMovable(piece));
+  }
+
+  public colorPieceAsMovable(piece: THREE.Group): void {
+    const pieceMesh = piece.children[0] as THREE.Mesh;
+    pieceMesh.material = this.movableMaterial;
+  }
+
+  public colorPieceAsHovered(piece: THREE.Group): void {
+    const pieceMesh = piece.children[0] as THREE.Mesh;
+    pieceMesh.material = this.hoveredMaterial;
+  }
+  
+
+
+  public movePiece(pieceX, pieceY, newPieceX, newPieceY) {
 
     if (window.location.hash === "#debug")
       this.printBoard(this.pieces);
@@ -87,6 +169,20 @@ export default class BoardLogic {
   }
 
 
+
+  private isOutOfBoard(x: number, y: number): boolean {
+    if (x < 0 || y < 0 || x > 6 || y > 6) { return true; }
+
+    const possibleXCorner = (x <= 1 || x >= 5);
+    const possibleYCorner = (y <= 1 || y >= 5);
+    
+    return (possibleXCorner && possibleYCorner);
+  }
+
+  private isNotOutOfBoard(x: number, y: number): boolean {
+    return (!this.isOutOfBoard(x, y));
+  }
+
   private index2DToWorldPosition(x, y): THREE.Vector3 {
     return new THREE.Vector3(y-3, 0, x-3);
   }
@@ -111,3 +207,10 @@ export default class BoardLogic {
 }
 
 type Board = Array<Array<THREE.Group>>;
+
+class Movement {
+  public piece: THREE.Group;
+  public pieceCoordinate: { x: number, y: number};
+  public eatenCoordinate: { x: number, y: number};
+  public jumpToCoordinate: { x: number, y: number};
+}

@@ -5,8 +5,8 @@ export default class {
 
   items = {}
 
-  // TODO: decent logic and functional approach
-  // could make it take 5 seconds to load to preview changes in main app
+  // TODO: use enums and refactor to typescript
+  // could make it take 5 seconds to load to preview changes in loading screen
   #cubemapEndings = [ "xpos", "xneg", "ypos", "yneg", "zpos", "zneg" ]
   #itemsToLoad = [
     { key: "skybox", type: "cubemap", path: "static/skybox/nebula_$.jpg" },
@@ -39,7 +39,6 @@ export default class {
 
   async loadResources() {
 
-    // TODO: better async code needed here for a fancy loading screen
     const loadersByType = {
       "texture": this.#loadTexture,
       "cubemap": this.#loadCubemap,
@@ -55,9 +54,6 @@ export default class {
         promises.push(loadPromise);
       }
     }
-
-    // TODO: use enums and refactor to typescript
-    // const promises2 = this.#itemsToLoad.map(element => loadersByType[element.type](element.key, element.path))
 
     await Promise.all(promises);
   }

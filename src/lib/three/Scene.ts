@@ -35,6 +35,9 @@ export default class {
   private isDebugMode: Boolean = false;
 
 
+  // TODO: raycaster wrapper class
+  private onRayCast: (hit: THREE.Vector3) => void = null
+
   constructor() {
     this.scene = new THREE.Scene();
     this.viewport = { width: window.innerWidth, height: window.innerHeight }
@@ -62,11 +65,14 @@ export default class {
 
     this.scene.add(this.camera)
 
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true })    
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true })
   
     const onTick = () => {
       renderer.render(this.scene, this.camera)
     }
+
+    // TODO: put this in browserData class
+    autoResize(this.viewport, this.camera, renderer);
 
     this.ticker.pushOnTickEvent(onTick);
     this.ticker.tick();
@@ -81,7 +87,7 @@ export default class {
     pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
 
     this.scene.background = resources.items["skybox"];
-    this.camera.position.set(10.571, 8.536, 4.785); const test = new THREE.Vector3(9.61, 7.76, 4.35).multiplyScalar(1.1); console.log(test);
+    this.camera.position.set(10.571, 8.536, 4.785);
   
     const sceneFocus = new THREE.Vector3(0, -2, 0);
     this.camera.lookAt(sceneFocus);
@@ -94,28 +100,34 @@ export default class {
 
     this.setupRaycaster();
 
-    // do movement
-    this.boardLogic.movePiece(3, 1, 3, 3)
-    this.boardLogic.putPieceAside(3, 2);
+    // // do movement
+    // this.boardLogic.movePiece(3, 1, 3, 3)
+    // this.boardLogic.putPieceAside(3, 2);
 
-    // undo movement
-    this.boardLogic.putPieceBack(3, 2);
-    this.boardLogic.movePiece(3, 3, 3, 1)
+    // // undo movement
+    // this.boardLogic.putPieceBack(3, 2);
+    // this.boardLogic.movePiece(3, 3, 3, 1)
+
 
     // algorithm: 
-    // check available movements
-    // highlight closest one to raycast hit
+    const movements = this.boardLogic.checkAvailableMovements();
+    movements.forEach(piece => this.boardLogic.colorPieceAsMovable(piece))
+
+    this.onRayCast = hit => {
+      this.boardLogic.colorPiecesAsMovable(movements);
+
+      const closest = this.boardLogic.getClosest(hit, movements);
+      this.boardLogic.colorPieceAsHovered(closest);
+    }
     // add listener on mouse up, makes the play at closest 
 
-    // TODO: browserData class and functions
-    autoResize(this.viewport, this.camera, renderer);
 
     // Debug
     if (this.isDebugMode) {
-      const controls = new OrbitControls(this.camera, canvas);
-      controls.maxPolarAngle = TAU * 0.25;
-      controls.target = sceneFocus;
-      controls.update();
+      // const controls = new OrbitControls(this.camera, canvas);
+      // controls.maxPolarAngle = TAU * 0.25;
+      // controls.target = sceneFocus;
+      // controls.update();
 
       const helper = new THREE.AxesHelper(100);
       this.scene.add(helper);
@@ -132,7 +144,9 @@ export default class {
 
     const planeRaycastObject = this.createRaycastPlane();
 
-    let hit: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = null;
+    let hits: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = null;
+
+    let doRaycast: () => void;
 
     if (this.isDebugMode) {
       const normalMaterial = new THREE.MeshNormalMaterial({ normalMapType: THREE.TangentSpaceNormalMap, wireframe: true });
@@ -142,21 +156,33 @@ export default class {
       ball.scale.set(0.1, 0.1, 0.1);
       this.scene.add(ball);
 
-      this.ticker.unshiftOnTickEvent(() => {
+      // setup debug raycaster
+      doRaycast = () => {
         caster.setFromCamera(this.mousePosition, this.camera);
-        hit = caster.intersectObject(planeRaycastObject);
-  
-        if (hit.length !== 0)
-          ball.position.copy(hit[0].point);
-      })
-
+        hits = caster.intersectObject(planeRaycastObject);
+        
+        if (hits.length !== 0 && this.onRayCast) {
+          this.onRayCast(hits[0].point);
+          ball.position.copy(hits[0].point);
+        }
+        
+      }
+      
     } else {
-      this.ticker.unshiftOnTickEvent(() => {
+      
+      // setup prod raycaster
+      doRaycast = () => {
         caster.setFromCamera(this.mousePosition, this.camera);
-        hit = caster.intersectObject(planeRaycastObject);
-      })
+        hits = caster.intersectObject(planeRaycastObject);
+        
+        if (hits.length !== 0 && this.onRayCast) {
+          this.onRayCast(hits[0].point);
+        }
+
+      }
     }
 
+    window.addEventListener('mousemove', doRaycast);
   }
 
   private createRaycastPlane(): THREE.Mesh {
@@ -169,6 +195,10 @@ export default class {
     this.scene.add(mesh);
 
     return mesh;
+  }
+
+  private checkAvailableMovements() {
+    
   }
 
   private setupLights() {
