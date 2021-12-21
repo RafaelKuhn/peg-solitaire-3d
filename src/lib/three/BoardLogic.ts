@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 export default class BoardLogic {
 
-  private pieces: Board;
-  private piecesAsideStack: Array<THREE.Group>;
+  private pieces: GroupMatrix;
+  private piecesAsideStack: GroupArray;
 
   private rootPiece: THREE.Group;
   private piecesParent: THREE.Group;
@@ -64,39 +64,39 @@ export default class BoardLogic {
     }
   }
 
-  // TODO: game logic class perhasps
+  // TODO: game logic class maybe
   // could run 3x3, 3x7, 3x3 fors instead of 7x7
   // return a instance of type 'movement'
-  public checkAvailableMovements(): Array<THREE.Group> {
+  public getMovablePieces(): Array<THREE.Group> {
     const movements = new Array<THREE.Group>();
     
     for (let y = 0; y < 7; y++) {
       for (let x = 0; x < 7; x++) {
-        // out of the center board, in the corners
+        // if isOutOfBoard, it has no piece or even a hole there
         if (this.isOutOfBoard(x, y)) continue;
 
-        const piece = this.pieces[y][x];
-        // piece is null, so it has a hole there
-        if (!piece) { continue; }
+        // if piece is null, it has a hole there
+        const currentPiece = this.pieces[y][x];
+        if (!currentPiece) { continue; }
 
         // can be moved right ?
         if (this.isNotOutOfBoard(x+2, y) && this.pieces[y][x+1] !== null && this.pieces[y][x+2] === null) {
-          movements.push(this.pieces[y][x])
+          movements.push(currentPiece)
         }
 
         // can be moved left ?
         if (this.isNotOutOfBoard(x-2, y) && this.pieces[y][x-1] !== null && this.pieces[y][x-2] === null) {
-          movements.push(this.pieces[y][x])
+          movements.push(currentPiece)
         }
 
-        // can be moved up ? (in the declaration, y- is up)
+        // can be moved up ? (y- is up, see this.pieces declaration)
         if (this.isNotOutOfBoard(x, y-2) && this.pieces[y-1][x] !== null && this.pieces[y-2][x] === null) {
-          movements.push(this.pieces[y][x])
+          movements.push(currentPiece)
         }
 
         // can be moved down ?
         if (this.isNotOutOfBoard(x, y+2) && this.pieces[y+1][x] !== null && this.pieces[y+2][x] === null) {
-          movements.push(this.pieces[y][x])
+          movements.push(currentPiece)
         }
       }
     }
@@ -104,7 +104,8 @@ export default class BoardLogic {
     return movements;
   }
 
-  public getClosest(hitPos: THREE.Vector3, pieces: Array<THREE.Group>): THREE.Group {
+  // TODO: change to array of 'movement'
+  public getClosestPiece(hitPos: THREE.Vector3, pieces: Array<THREE.Group>): THREE.Group|null {
     let closest = pieces[0];
     let closestDist: number = hitPos.distanceTo(closest.position);
 
@@ -117,7 +118,7 @@ export default class BoardLogic {
       }
     }
 
-    return closest;
+    return closestDist < 1.5 ? closest : null;
   }
 
 
@@ -146,6 +147,8 @@ export default class BoardLogic {
     const piece = this.pieces[pieceY][pieceX];
     
     const newPiecePos = this.index2DToWorldPosition(newPieceX, newPieceY);
+    
+    if (!piece) { throw "error: piece can't be null"; }
     piece.position.copy(newPiecePos);
         
     // update pieces array
@@ -155,6 +158,8 @@ export default class BoardLogic {
 
   public putPieceAside(pieceX, pieceY) {
     const pieceToRemove = this.pieces[pieceY][pieceX];
+    if (!pieceToRemove) { throw "error: piece can't be null"; }
+
     this.piecesAsideStack.push(pieceToRemove);
     pieceToRemove.position.set(0, 3, 0);
 
@@ -163,8 +168,9 @@ export default class BoardLogic {
 
   public putPieceBack(pieceX, pieceY) {
     const pieceBack = this.piecesAsideStack.pop();
+    if (!pieceBack) throw `error: pieceback should not be null ${pieceBack}`;
+    
     this.pieces[pieceY][pieceX] = pieceBack;
-
     pieceBack.position.copy(this.index2DToWorldPosition(pieceX, pieceY));
   }
 
@@ -187,6 +193,10 @@ export default class BoardLogic {
     return new THREE.Vector3(y-3, 0, x-3);
   }
 
+  private isNotNull(x): boolean {
+    return (x !== null) ? true : false;
+  }
+
   private printBoard(board) {
     let s = '  0 1 2 3 4 5 6\n';
     for (let y = 0; y < 7; y++) {
@@ -206,7 +216,8 @@ export default class BoardLogic {
 
 }
 
-type Board = Array<Array<THREE.Group>>;
+type GroupMatrix = Array<Array<THREE.Group|null>>;
+type GroupArray = Array<THREE.Group|null>;
 
 class Movement {
   public piece: THREE.Group;

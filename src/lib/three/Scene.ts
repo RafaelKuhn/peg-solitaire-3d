@@ -2,8 +2,6 @@ import * as THREE from 'three';
 import * as dat from 'dat.gui';
 import { gsap } from 'gsap';
 
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-
 import Resources from '$lib/three/Resources';
 import Ticker from '$lib/three/Ticker';
 import BoardLogic from "$lib/three/BoardLogic";
@@ -26,17 +24,17 @@ export default class {
   private ticker: Ticker;
   
   // game logic
-  private loadingScreen: LoadingScreen;
+  private loadingScreen?: LoadingScreen;
   private boardLogic: BoardLogic;
   
-  // TODO: change these to another place, like 'browserData'
+  // TODO: change these to another place, like 'browserData' to replace "Utils bad class"
   private mousePosition: THREE.Vector2;
   private viewport: Viewport;
   private isDebugMode: Boolean = false;
 
 
   // TODO: raycaster wrapper class
-  private onRayCast: (hit: THREE.Vector3) => void = null
+  private onRayCast: OptionalCallback<THREE.Vector3> = null;
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -46,7 +44,6 @@ export default class {
     this.mousePosition = new THREE.Vector2(2000, 2000);
 
     this.ticker = new Ticker();
-    this.loadingScreen = new LoadingScreen(this.camera, this.scene);
   } 
 
   public async loadScene(canvas: HTMLCanvasElement) {
@@ -77,13 +74,13 @@ export default class {
     this.ticker.pushOnTickEvent(onTick);
     this.ticker.tick();
 
-    this.loadingScreen.show();
+    const loadingScreen = new LoadingScreen(this.camera, this.scene);
+    loadingScreen.show();
 
     const resources = new Resources(() => null);
     await resources.loadResources();
 
-    this.loadingScreen.dispose();
-    delete this.loadingScreen;
+    loadingScreen.dispose();
     pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
 
     this.scene.background = resources.items["skybox"];
@@ -109,26 +106,23 @@ export default class {
     // this.boardLogic.movePiece(3, 3, 3, 1)
 
 
-    // algorithm: 
-    const movements = this.boardLogic.checkAvailableMovements();
-    movements.forEach(piece => this.boardLogic.colorPieceAsMovable(piece))
+    const movablePieces = this.boardLogic.getMovablePieces();
+    movablePieces.forEach(piece => this.boardLogic.colorPieceAsMovable(piece))
 
     this.onRayCast = hit => {
-      this.boardLogic.colorPiecesAsMovable(movements);
+      this.boardLogic.colorPiecesAsMovable(movablePieces);
 
-      const closest = this.boardLogic.getClosest(hit, movements);
-      this.boardLogic.colorPieceAsHovered(closest);
+      const closest = this.boardLogic.getClosestPiece(hit, movablePieces);
+      if (closest) {
+        this.boardLogic.colorPieceAsHovered(closest);
+      }
     }
+
     // add listener on mouse up, makes the play at closest 
 
 
     // Debug
     if (this.isDebugMode) {
-      // const controls = new OrbitControls(this.camera, canvas);
-      // controls.maxPolarAngle = TAU * 0.25;
-      // controls.target = sceneFocus;
-      // controls.update();
-
       const helper = new THREE.AxesHelper(100);
       this.scene.add(helper);
     }
@@ -144,7 +138,7 @@ export default class {
 
     const planeRaycastObject = this.createRaycastPlane();
 
-    let hits: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = null;
+    let hits: THREE.Intersection<THREE.Object3D<THREE.Event>>[];
 
     let doRaycast: () => void;
 
@@ -152,8 +146,7 @@ export default class {
       const normalMaterial = new THREE.MeshNormalMaterial({ normalMapType: THREE.TangentSpaceNormalMap, wireframe: true });
       planeRaycastObject.material = normalMaterial;
 
-      const ball = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 7, 7), new THREE.MeshBasicMaterial());
-      ball.scale.set(0.1, 0.1, 0.1);
+      const ball = new THREE.Mesh(new THREE.SphereBufferGeometry(0.1, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
       this.scene.add(ball);
 
       // setup debug raycaster
@@ -161,8 +154,8 @@ export default class {
         caster.setFromCamera(this.mousePosition, this.camera);
         hits = caster.intersectObject(planeRaycastObject);
         
-        if (hits.length !== 0 && this.onRayCast) {
-          this.onRayCast(hits[0].point);
+        if (hits.length !== 0) {
+          if (this.onRayCast) this.onRayCast(hits[0].point);
           ball.position.copy(hits[0].point);
         }
         
@@ -197,10 +190,6 @@ export default class {
     return mesh;
   }
 
-  private checkAvailableMovements() {
-    
-  }
-
   private setupLights() {
     const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
     this.scene.add(ambient);
@@ -220,6 +209,8 @@ export default class {
   }
 
 }
+
+type OptionalCallback<T> = ((hit: T) => void) | null
 
 interface Viewport {
   width: number,
