@@ -6,7 +6,7 @@ import Movement from '$lib/game/Movement';
 export default class BoardLogic {
 
   private pieces: PieceMatrix;
-  private piecesAsideStack: PieceArray;
+  private piecesAsideStack: PieceStack;
 
   private rootPiece: THREE.Group;
   private piecesParent: THREE.Group;
@@ -24,6 +24,15 @@ export default class BoardLogic {
       [2, 2, 1, 1, 1, 2, 2],
       [2, 2, 1, 1, 1, 2, 2],
     ];
+    // this.boardTemplate = [
+    //   [2, 2, 0, 0, 0, 2, 2],
+    //   [2, 2, 0, 0, 0, 2, 2],
+    //   [0, 0, 0, 0, 0, 0, 0],
+    //   [0, 0, 0, 0, 1, 0, 0],
+    //   [0, 0, 0, 0, 1, 0, 0],
+    //   [2, 2, 0, 0, 0, 2, 2],
+    //   [2, 2, 0, 0, 0, 2, 2],
+    // ];
 
     this.rootPiece = rootPiece;
 
@@ -56,6 +65,10 @@ export default class BoardLogic {
         this.pieces[y][x] = new Piece(pieceObjectGroup);
       }
     }
+  }
+
+  public resetPiecesColors() {
+    this.pieces.forEach(row => row.forEach(piece => piece?.resetColor()));
   }
 
   // TODO: game logic class maybe
@@ -98,7 +111,7 @@ export default class BoardLogic {
     return movements;
   }
 
-  public getClosestMovement(worldPosition: THREE.Vector3, candidates: Array<Movement>): Movement|null {
+  public getClosestPieceMovement(worldPosition: THREE.Vector3, candidates: Array<Movement>): Movement|null {
     let closestMovement = candidates[0];
     let closestDistance = worldPosition.distanceTo(candidates[0].pieceToMove.position);
 
@@ -127,6 +140,8 @@ export default class BoardLogic {
     if (window.location.hash === "#debug") { console.log("new board:"); this.printBoard(); }
   }
 
+
+
   private movePiece(piece: Piece, pieceCoords: { x: number, y: number }, destination: { x: number, y: number } ) {
     const pieceToMove = piece;
     const newPiecePos = this.index2DToWorldPosition(destination.x, destination.y);
@@ -134,15 +149,19 @@ export default class BoardLogic {
     // TODO: create animation here instead of just copying position
     pieceToMove.position.copy(newPiecePos);
 
-    this.pieces[destination.y][destination.y] = pieceToMove;
+    console.log(`moving piece ${pieceCoords.x},${pieceCoords.y} to ${destination.x},${destination.y} `);
+
+    this.pieces[destination.y][destination.x] = pieceToMove;
     this.pieces[pieceCoords.y][pieceCoords.x] = null;
   }
 
   // TODO: implement better thrash logic
   private putPieceInThrash(coords: { x: number, y: number }) {
     const pieceToRemove = this.pieces[coords.y][coords.x];
+    pieceToRemove?.resetColor();
 
-    this.piecesAsideStack.push(pieceToRemove);
+    this.pieces[coords.y][coords.x] = null;
+    this.piecesAsideStack.push(pieceToRemove!);
     pieceToRemove!.position.set(0, 1, -4);
   }
 
@@ -153,8 +172,6 @@ export default class BoardLogic {
     this.pieces[coords.y][coords.x] = pieceBack;
     pieceBack.position.copy(this.index2DToWorldPosition(coords.x, coords.y));
   }
-
-
 
   private isOutOfBoard(x: number, y: number): boolean {
     if (x < 0 || y < 0 || x > 6 || y > 6) { return true; }
@@ -181,7 +198,7 @@ export default class BoardLogic {
         const el = this.pieces[y][x];
         if (el == null) {
           s += `  `;
-        } else if (typeof el === 'object') {
+        } else {
           s += `1 `
         }
       }
@@ -193,4 +210,4 @@ export default class BoardLogic {
 }
 
 type PieceMatrix = Array<Array<Piece|null>>;
-type PieceArray = Array<Piece|null>;
+type PieceStack = Array<Piece>;

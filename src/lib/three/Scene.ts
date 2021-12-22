@@ -39,7 +39,7 @@ export default class {
 
 
   // TODO: raycaster wrapper class
-  private onRayCast: OptionalCallback<THREE.Vector3> = null;
+  private onMouseHover: OptionalCallback<THREE.Vector3> = null;
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -102,16 +102,6 @@ export default class {
 
     this.setupRaycaster();
 
-    // // do movement
-    // this.boardLogic.movePiece(3, 1, 3, 3)
-    // this.boardLogic.putPieceAside(3, 2);
-
-    // // undo movement
-    // this.boardLogic.putPieceBack(3, 2);
-    // this.boardLogic.movePiece(3, 3, 3, 1)
-
-
-
     this.setupGameLogic();
 
     // add listener on mouse up, makes the play at closest 
@@ -154,7 +144,7 @@ export default class {
         hits = caster.intersectObject(planeRaycastObject);
         
         if (hits.length !== 0) {
-          if (this.onRayCast) { this.onRayCast(hits[0].point); }
+          if (this.onMouseHover) { this.onMouseHover(hits[0].point); }
           ball.position.copy(hits[0].point);
         }
       }
@@ -165,7 +155,7 @@ export default class {
         caster.setFromCamera(this.mousePosition, this.camera);
         hits = caster.intersectObject(planeRaycastObject);
         if (hits.length !== 0) {
-          if (this.onRayCast) { this.onRayCast(hits[0].point); }
+          if (this.onMouseHover) { this.onMouseHover(hits[0].point); }
         }
       }
     }
@@ -175,36 +165,56 @@ export default class {
 
   // TODO: game logic class
   private setupGameLogic() {
-    const possibleMovements = this.boardLogic.getCandidateMovements();
-    possibleMovements.forEach(movement => movement.pieceToMove.colorAsMovable());
     
-    let hoveredMovement: Movement|null;
-    const onPieceClicked = () => {
-      if (this.isDebugMode) {
-        console.log(`clicked piece `);
-        console.log(hoveredMovement?.pieceToMoveCoord);
-      }
+    const gameLoop = () => {
+      this.boardLogic.resetPiecesColors();
+
+      let possibleMovements = this.boardLogic.getCandidateMovements();
+      // check if user has lost or won
       
-      hoveredMovement?.pieceToMove.colorAsMovable();
-      this.resetCursor();
-      this.boardLogic.executeMovement(hoveredMovement!);
-    }
-
-    this.onRayCast = mouseWorldPosition => {
+      if (this.isDebugMode) console.log(`${possibleMovements.length} movements possible`);
+      let hoveredPieceMovement: Movement|null;
+      
       possibleMovements.forEach(movement => movement.pieceToMove.colorAsMovable());
-      hoveredMovement = this.boardLogic.getClosestMovement(mouseWorldPosition, possibleMovements);
 
-      if (hoveredMovement) {
-        hoveredMovement.pieceToMove.colorAsHovered();
-        this.changeCursorToPointer();
+      const testHoveringPieces = mouseWorldPosition => {
+        possibleMovements.forEach(movement => movement.pieceToMove.colorAsMovable());
+        hoveredPieceMovement = this.boardLogic.getClosestPieceMovement(mouseWorldPosition, possibleMovements);
 
-        window.addEventListener("click", onPieceClicked)
-      } else {
-        this.resetCursor();
+        if (hoveredPieceMovement) {
+          hoveredPieceMovement.pieceToMove.colorAsHovered();
+          this.changeCursorToPointer();
+
+          window.addEventListener("click", onPieceClicked)
+        } else {
+          this.resetCursor();
+          
+          window.removeEventListener("click", onPieceClicked);
+        }
+      }
+
+      const onPieceClicked = () => {
+        if (this.isDebugMode) {
+          console.log(`clicked piece `);
+          console.log(hoveredPieceMovement?.pieceToMoveCoord);
+        }
         
         window.removeEventListener("click", onPieceClicked);
+        this.resetCursor();
+        this.boardLogic.executeMovement(hoveredPieceMovement!);
+        gameLoop();
+      }
+      
+      if (possibleMovements.length === 0) {
+        console.log("you lost or won");
+        this.onMouseHover = null;
+        window.removeEventListener("click", onPieceClicked);
+      } else {
+        this.onMouseHover = testHoveringPieces;
       }
     }
+
+    gameLoop();
   }
 
   private createRaycastPlane(): THREE.Mesh {

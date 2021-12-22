@@ -4,7 +4,7 @@ export default class Piece {
   private mesh: THREE.Mesh;
   private modelGroup: THREE.Group;
   
-  // TODO: find less hacky way to do this
+  // TODO: use typescript 4.4 static block feature (not yet supported)
   private static isMemoryLoaded: boolean = false;
 
   private static defaultMaterial: THREE.MeshStandardMaterial;
@@ -26,6 +26,10 @@ export default class Piece {
 
   get position(): THREE.Vector3 {
     return this.modelGroup.position;
+  }
+
+  public resetColor() {
+    this.mesh.material = Piece.defaultMaterial;
   }
 
   public colorAsMovable() {
