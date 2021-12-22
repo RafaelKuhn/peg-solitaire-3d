@@ -1,7 +1,7 @@
 {
   "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
-      "strictNullChecks": true,
+    "strictNullChecks": true,
     "forceConsistentCasingInFileNames": false,
     "target": "esnext",
     "useDefineForClassFields": true,

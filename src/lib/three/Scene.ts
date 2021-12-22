@@ -1,16 +1,22 @@
+// packages
 import * as THREE from 'three';
 import * as dat from 'dat.gui';
 import { gsap } from 'gsap';
 
+// three
 import Resources from '$lib/three/Resources';
 import Ticker from '$lib/three/Ticker';
-import BoardLogic from "$lib/three/BoardLogic";
 import LoadingScreen from "$lib/three/LoadingScreen";
-
 import autoResize from "$lib/three/AutoResize";
 
+// game
+import BoardLogic from "$lib/game/BoardLogic";
+import type Movement from '$lib/game/Movement';
+
+// svelte
 import { pageTitle } from "$lib/svelte/Stores";
 import { Utils } from '$lib/svelte/Utils';
+
 
 const TAU = 6.283185;
 const HALF_TAU = TAU * 0.5;
@@ -24,7 +30,6 @@ export default class {
   private ticker: Ticker;
   
   // game logic
-  private loadingScreen?: LoadingScreen;
   private boardLogic: BoardLogic;
   
   // TODO: change these to another place, like 'browserData' to replace "Utils bad class"
@@ -106,17 +111,8 @@ export default class {
     // this.boardLogic.movePiece(3, 3, 3, 1)
 
 
-    const movablePieces = this.boardLogic.getMovablePieces();
-    movablePieces.forEach(piece => this.boardLogic.colorPieceAsMovable(piece))
 
-    this.onRayCast = hit => {
-      this.boardLogic.colorPiecesAsMovable(movablePieces);
-
-      const closest = this.boardLogic.getClosestPiece(hit, movablePieces);
-      if (closest) {
-        this.boardLogic.colorPieceAsHovered(closest);
-      }
-    }
+    this.setupGameLogic();
 
     // add listener on mouse up, makes the play at closest 
 
@@ -132,6 +128,9 @@ export default class {
     console.log("game restart");
   }
 
+
+
+  
 
   private setupRaycaster() {
     const caster = new THREE.Raycaster();
@@ -155,27 +154,57 @@ export default class {
         hits = caster.intersectObject(planeRaycastObject);
         
         if (hits.length !== 0) {
-          if (this.onRayCast) this.onRayCast(hits[0].point);
+          if (this.onRayCast) { this.onRayCast(hits[0].point); }
           ball.position.copy(hits[0].point);
         }
-        
       }
-      
     } else {
       
       // setup prod raycaster
       doRaycast = () => {
         caster.setFromCamera(this.mousePosition, this.camera);
         hits = caster.intersectObject(planeRaycastObject);
-        
-        if (hits.length !== 0 && this.onRayCast) {
-          this.onRayCast(hits[0].point);
+        if (hits.length !== 0) {
+          if (this.onRayCast) { this.onRayCast(hits[0].point); }
         }
-
       }
     }
 
     window.addEventListener('mousemove', doRaycast);
+  }
+
+  // TODO: game logic class
+  private setupGameLogic() {
+    const possibleMovements = this.boardLogic.getCandidateMovements();
+    possibleMovements.forEach(movement => movement.pieceToMove.colorAsMovable());
+    
+    let hoveredMovement: Movement|null;
+    const onPieceClicked = () => {
+      if (this.isDebugMode) {
+        console.log(`clicked piece `);
+        console.log(hoveredMovement?.pieceToMoveCoord);
+      }
+      
+      hoveredMovement?.pieceToMove.colorAsMovable();
+      this.resetCursor();
+      this.boardLogic.executeMovement(hoveredMovement!);
+    }
+
+    this.onRayCast = mouseWorldPosition => {
+      possibleMovements.forEach(movement => movement.pieceToMove.colorAsMovable());
+      hoveredMovement = this.boardLogic.getClosestMovement(mouseWorldPosition, possibleMovements);
+
+      if (hoveredMovement) {
+        hoveredMovement.pieceToMove.colorAsHovered();
+        this.changeCursorToPointer();
+
+        window.addEventListener("click", onPieceClicked)
+      } else {
+        this.resetCursor();
+        
+        window.removeEventListener("click", onPieceClicked);
+      }
+    }
   }
 
   private createRaycastPlane(): THREE.Mesh {
@@ -208,6 +237,14 @@ export default class {
     }
   }
 
+  // TODO: board animations class
+  private changeCursorToPointer() {
+    document.body.style.cursor = "pointer";
+  }
+
+  private resetCursor() {
+    document.body.style.cursor = "default";
+  }
 }
 
 type OptionalCallback<T> = ((hit: T) => void) | null
