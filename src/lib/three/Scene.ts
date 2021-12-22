@@ -16,6 +16,7 @@ import type Movement from '$lib/game/Movement';
 // svelte
 import { pageTitle } from "$lib/svelte/Stores";
 import { Utils } from '$lib/svelte/Utils';
+import type PieceWithMovements from '$lib/game/PieceWithMovements';
 
 
 const TAU = 6.283185;
@@ -163,59 +164,79 @@ export default class {
     window.addEventListener('mousemove', doRaycast);
   }
 
-  // TODO: game logic class
+  private onPieceClicked: (() => void);
+
+  // TODO: game logic class could have a state, currently movable pieces, extract concerns of 'board logic' and 'game logic'
   private setupGameLogic() {
     
-    const gameLoop = () => {
+    const gameIteration = () => {
       this.boardLogic.resetPiecesColors();
 
-      let possibleMovements = this.boardLogic.getCandidateMovements();
-      // check if user has lost or won
+      let movablePieces = this.boardLogic.getCandidateMovements();
       
-      if (this.isDebugMode) console.log(`${possibleMovements.length} movements possible`);
-      let hoveredPieceMovement: Movement|null;
+      if (this.isDebugMode) console.log(`${movablePieces.length} movable pieces`);
+      let pieceToMove: PieceWithMovements|null;
       
-      possibleMovements.forEach(movement => movement.pieceToMove.colorAsMovable());
+      movablePieces.forEach(piece => piece.pieceObject.colorAsMovable());
 
       const testHoveringPieces = mouseWorldPosition => {
-        possibleMovements.forEach(movement => movement.pieceToMove.colorAsMovable());
-        hoveredPieceMovement = this.boardLogic.getClosestPieceMovement(mouseWorldPosition, possibleMovements);
+        movablePieces.forEach(piece => piece.pieceObject.colorAsMovable());
+        pieceToMove = this.boardLogic.getClosestPiece(mouseWorldPosition, movablePieces);
 
-        if (hoveredPieceMovement) {
-          hoveredPieceMovement.pieceToMove.colorAsHovered();
+        // test if mouse is hovering a piece which has movements
+        if (pieceToMove) {
+          
+          pieceToMove.pieceObject.colorAsHovered();
           this.changeCursorToPointer();
 
-          window.addEventListener("click", onPieceClicked)
+          if (pieceToMove.movements.length === 1) { // check type if doing thingy
+
+            this.onPieceClicked = clickPieceWithOneMovement;
+            window.addEventListener("click", this.onPieceClicked);
+          } else {
+
+            this.onPieceClicked =  clickPieceWithMultipleMovements;
+            window.addEventListener("click", this.onPieceClicked);
+          }
         } else {
           this.resetCursor();
-          
-          window.removeEventListener("click", onPieceClicked);
+
+          window.removeEventListener("click", this.onPieceClicked);
         }
       }
 
-      const onPieceClicked = () => {
-        if (this.isDebugMode) {
-          console.log(`clicked piece `);
-          console.log(hoveredPieceMovement?.pieceToMoveCoord);
-        }
-        
-        window.removeEventListener("click", onPieceClicked);
+      const clickPieceWithOneMovement = () => {
+        if (this.isDebugMode) { console.log(`clicked piece `); console.log(pieceToMove?.pieceCoords); }
+        window.removeEventListener("click", this.onPieceClicked);
         this.resetCursor();
-        this.boardLogic.executeMovement(hoveredPieceMovement!);
-        gameLoop();
+        this.boardLogic.executeMovement(pieceToMove!, pieceToMove!.movements[0]);
+        gameIteration();
+      }
+
+      const clickPieceWithMultipleMovements = () => {
+        if (this.isDebugMode) { console.log(`clicked piece with +1 movements`); console.log(pieceToMove?.pieceCoords); }
+        window.removeEventListener("click", this.onPieceClicked);
+        this.resetCursor();
+        this.boardLogic.executeMovement(pieceToMove!, pieceToMove!.movements[0]);
+        gameIteration();
       }
       
-      if (possibleMovements.length === 0) {
-        console.log("you lost or won");
-        this.onMouseHover = null;
-        window.removeEventListener("click", onPieceClicked);
+      if (movablePieces.length === 0) {
+        this.winOrLoseGame();
       } else {
         this.onMouseHover = testHoveringPieces;
       }
     }
 
-    gameLoop();
+    gameIteration();
   }
+
+  private winOrLoseGame() {
+    console.log("you lost or won");
+    this.onMouseHover = null;
+    window.removeEventListener("click", this.onPieceClicked);
+  }
+  // end game logic
 
   private createRaycastPlane(): THREE.Mesh {
     const mesh = new THREE.Mesh(

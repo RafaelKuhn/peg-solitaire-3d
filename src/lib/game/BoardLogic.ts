@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import Piece from '$lib/game/Piece';
 import Movement from '$lib/game/Movement';
+import PieceWithMovements from '$lib/game/PieceWithMovements';
 
 export default class BoardLogic {
 
@@ -15,24 +16,24 @@ export default class BoardLogic {
 
   constructor(scene: THREE.Scene, rootPiece: THREE.Group, rootBoard: THREE.Group) {
 
-    this.boardTemplate = [
-      [2, 2, 1, 1, 1, 2, 2],
-      [2, 2, 1, 1, 1, 2, 2],
-      [1, 1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 0, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1],
-      [2, 2, 1, 1, 1, 2, 2],
-      [2, 2, 1, 1, 1, 2, 2],
-    ];
     // this.boardTemplate = [
-    //   [2, 2, 0, 0, 0, 2, 2],
-    //   [2, 2, 0, 0, 0, 2, 2],
-    //   [0, 0, 0, 0, 0, 0, 0],
-    //   [0, 0, 0, 0, 1, 0, 0],
-    //   [0, 0, 0, 0, 1, 0, 0],
-    //   [2, 2, 0, 0, 0, 2, 2],
-    //   [2, 2, 0, 0, 0, 2, 2],
+    //   [2, 2, 1, 1, 1, 2, 2],
+    //   [2, 2, 1, 1, 1, 2, 2],
+    //   [1, 1, 1, 1, 1, 1, 1],
+    //   [1, 1, 1, 0, 1, 1, 1],
+    //   [1, 1, 1, 1, 1, 1, 1],
+    //   [2, 2, 1, 1, 1, 2, 2],
+    //   [2, 2, 1, 1, 1, 2, 2],
     // ];
+    this.boardTemplate = [
+      [2, 2, 0, 0, 0, 2, 2],
+      [2, 2, 1, 0, 0, 2, 2],
+      [0, 1, 1, 0, 1, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0],
+      [0, 0, 0, 0, 1, 0, 0],
+      [2, 2, 0, 0, 0, 2, 2],
+      [2, 2, 0, 0, 0, 2, 2],
+    ];
 
     this.rootPiece = rootPiece;
 
@@ -72,10 +73,9 @@ export default class BoardLogic {
   }
 
   // TODO: game logic class maybe
-  // could run 3x3, 3x7, 3x3 fors instead of 7x7
-  // return a instance of type 'movement'
-  public getCandidateMovements(): Array<Movement> {
-    const movements = new Array<Movement>();
+  public getCandidateMovements(): Array<PieceWithMovements> {
+    const piecesToMove = new Array<PieceWithMovements>();
+    // const piecesToMove = new Array<Movement>();
     
     for (let y = 0; y < 7; y++) {
       for (let x = 0; x < 7; x++) {
@@ -86,38 +86,45 @@ export default class BoardLogic {
         const currentPiece = this.pieces[y][x];
         if (!currentPiece) { continue; }
 
+        const movements = new Array<Movement>();
+        const currentPieceCoords = { x, y };
+
         // can be moved right ?
         if (this.isNotOutOfBoard(x+2, y) && this.pieces[y][x+1] !== null && this.pieces[y][x+2] === null) {
-          movements.push(new Movement(currentPiece, { x, y }, { x: x+2, y }, { x: x+1, y }))
+          movements.push(new Movement( { x: x+2, y }, { x: x+1, y }))
         }
 
         // can be moved left ?
         if (this.isNotOutOfBoard(x-2, y) && this.pieces[y][x-1] !== null && this.pieces[y][x-2] === null) {
-          movements.push(new Movement(currentPiece, { x, y }, { x: x-2, y }, { x: x-1, y }))
+          movements.push(new Movement( { x: x-2, y }, { x: x-1, y }))
         }
 
-        // can be moved up ? (yes, y- is up, see this.pieces declaration)
+        // can be moved up ? (yes, -y is up, see this.pieces declaration)
         if (this.isNotOutOfBoard(x, y-2) && this.pieces[y-1][x] !== null && this.pieces[y-2][x] === null) {
-          movements.push(new Movement(currentPiece, { x, y }, { x, y: y-2 }, { x, y: y-1 }))
+          movements.push(new Movement( { x, y: y-2 }, { x, y: y-1 }))
         }
 
         // can be moved down ?
         if (this.isNotOutOfBoard(x, y+2) && this.pieces[y+1][x] !== null && this.pieces[y+2][x] === null) {
-          movements.push(new Movement(currentPiece, { x, y }, { x, y: y+2 }, { x, y: y+1 }))
+          movements.push(new Movement( { x, y: y+2 }, { x, y: y+1 }))
         }
+
+        if (movements.length > 0) {
+          piecesToMove.push(new PieceWithMovements(currentPiece, currentPieceCoords, movements));
+        } 
       }
     }
 
-    return movements;
+    return piecesToMove;
   }
 
-  public getClosestPieceMovement(worldPosition: THREE.Vector3, candidates: Array<Movement>): Movement|null {
+  public getClosestPiece(worldPosition: THREE.Vector3, candidates: Array<PieceWithMovements>): PieceWithMovements|null {
     let closestMovement = candidates[0];
-    let closestDistance = worldPosition.distanceTo(candidates[0].pieceToMove.position);
+    let closestDistance = worldPosition.distanceTo(candidates[0].pieceObject.position);
 
     for (let i = 1; i < candidates.length; i++) {
       const currentMovement = candidates[i];
-      const currentMovementDist = worldPosition.distanceTo(currentMovement.pieceToMove.position);
+      const currentMovementDist = worldPosition.distanceTo(currentMovement.pieceObject.position);
       if (currentMovementDist < closestDistance) {
         closestDistance = currentMovementDist;
         closestMovement = currentMovement;
@@ -131,9 +138,9 @@ export default class BoardLogic {
     }
   }
 
-  public executeMovement(movement: Movement) {
+  public executeMovement(pieceToMove: PieceWithMovements, movement: Movement) {
     
-    this.movePiece(movement.pieceToMove, movement.pieceToMoveCoord, movement.pieceDestinationCoords);
+    this.movePiece(pieceToMove.pieceObject, pieceToMove.pieceCoords, movement.destination);
     this.putPieceInThrash(movement.eatenPieceCoords)
 
     // TODO: remove this, create global way of checking debug mode 'browserData'
