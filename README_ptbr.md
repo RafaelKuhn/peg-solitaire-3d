@@ -1,6 +1,6 @@
 # WORK IN PROGRESS
 
-[English](README.md) | Portuguese
+[Inglês](README.md) | Português
 
 <div align="center">
     <h1>Resta Um</h1>
