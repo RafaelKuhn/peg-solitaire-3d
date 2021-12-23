@@ -13,9 +13,4 @@ export default class PieceWithMovements {
     this.movements = movements;
   }
 
-  // TODO: call this and get materials from singleton
-  // public colorAsMovable() {
-  //   this.pieceObject.colorAsMovable();
-  //   console.log(`coloring piece ${this.pieceCoords.x},${this.pieceCoords.y} with ${this.movements.length} movements`);
-  // }
 }

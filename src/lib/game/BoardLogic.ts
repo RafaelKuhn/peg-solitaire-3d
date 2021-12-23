@@ -10,6 +10,7 @@ export default class BoardLogic {
 
   private pieces: PieceMatrix;
   private piecesAsideStack: PieceStack;
+  private blobs: Array<Blob>;
 
   private rootPiece: THREE.Group;
   private piecesParent: THREE.Group;
@@ -43,6 +44,7 @@ export default class BoardLogic {
 
     this.piecesParent = new THREE.Group();
     this.piecesAsideStack = [];
+    this.blobs = [];
 
     scene.add(this.piecesParent, rootBoard);
     
@@ -73,11 +75,7 @@ export default class BoardLogic {
     }
   }
 
-  public resetPiecesColors() {
-    this.pieces.forEach(row => row.forEach(piece => piece?.colorAsDefault()));
-  }
-
-  // TODO: game manager class maybe, with states
+  // TODO: game manager class maybe
   public getCandidateMovements(): Array<PieceWithMovements> {
     const piecesToMove = new Array<PieceWithMovements>();
     // const piecesToMove = new Array<Movement>();
@@ -152,7 +150,6 @@ export default class BoardLogic {
   }
 
   // TODO: get these blobs out of here for gods sake
-  public blobs: Array<Blob> = new Array<Blob>();
   public spawnBlob(movement: Movement) {
     const blob = new Blob(movement)
 
@@ -183,6 +180,11 @@ export default class BoardLogic {
     } else {
       return null;
     }
+  }
+  // end blobs
+
+  public resetPiecesColors() {
+    this.pieces.forEach(row => row.forEach(piece => piece?.colorAsDefault()));
   }
 
   public colorBlobsAsDefault() {

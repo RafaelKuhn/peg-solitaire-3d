@@ -6,19 +6,19 @@
   import { onMount, createEventDispatcher } from 'svelte'
   import Scene from '$lib/three/Scene'
 
-  let canvas: HTMLCanvasElement = null;
-  let scene: Scene = null;
+  let canvas: HTMLCanvasElement|null = null;
+  let scene: Scene|null = null;
    
   const dispatch = createEventDispatcher();
 
   onMount(() => {
     scene = new Scene();
-    scene.loadScene(canvas)
+    scene.loadScene(canvas!)
       .then(() => dispatch("sceneLoaded"));
   })
 
   export function restartGame() {
-    scene.restartGame();
+    scene!.restartGame();
   }
   
 </script>

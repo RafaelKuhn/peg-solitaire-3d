@@ -238,7 +238,7 @@ export default class {
         }
 
         const selectBlob = mouseWorldPosition => {
-          this.boardLogic.blobs.forEach(blob => blob.colorAsDefault());
+          this.boardLogic.colorBlobsAsDefault();
           const closestBlob = this.boardLogic.getClosestBlob(mouseWorldPosition);
           
           if (closestBlob) {
