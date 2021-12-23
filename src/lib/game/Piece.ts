@@ -19,16 +19,16 @@ export default class Piece {
       Piece.defaultMaterial = this.mesh.material as THREE.MeshStandardMaterial;
       Piece.movableMaterial = new THREE.MeshStandardMaterial({ color: 0x4f86c5 });
       Piece.hoveredMaterial = new THREE.MeshStandardMaterial({ color: 0x008000 });
+  
+      Piece.isMemoryLoaded = true;
     }
-
-    Piece.isMemoryLoaded = true;
   }
 
-  get position(): THREE.Vector3 {
+  public get position(): THREE.Vector3 {
     return this.modelGroup.position;
   }
 
-  public resetColor() {
+  public colorAsDefault() {
     this.mesh.material = Piece.defaultMaterial;
   }
 

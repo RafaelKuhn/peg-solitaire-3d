@@ -4,6 +4,8 @@ import Piece from '$lib/game/Piece';
 import Movement from '$lib/game/Movement';
 import PieceWithMovements from '$lib/game/PieceWithMovements';
 
+import Blob from '$lib/game/Blob';
+
 export default class BoardLogic {
 
   private pieces: PieceMatrix;
@@ -14,34 +16,37 @@ export default class BoardLogic {
   
   private boardTemplate: Array<Array<number>>;
 
+  private scene: THREE.Scene;
+
   constructor(scene: THREE.Scene, rootPiece: THREE.Group, rootBoard: THREE.Group) {
 
-    // this.boardTemplate = [
-    //   [2, 2, 1, 1, 1, 2, 2],
-    //   [2, 2, 1, 1, 1, 2, 2],
-    //   [1, 1, 1, 1, 1, 1, 1],
-    //   [1, 1, 1, 0, 1, 1, 1],
-    //   [1, 1, 1, 1, 1, 1, 1],
-    //   [2, 2, 1, 1, 1, 2, 2],
-    //   [2, 2, 1, 1, 1, 2, 2],
-    // ];
     this.boardTemplate = [
-      [2, 2, 0, 0, 0, 2, 2],
-      [2, 2, 1, 0, 0, 2, 2],
-      [0, 1, 1, 0, 1, 0, 0],
-      [0, 1, 1, 0, 1, 1, 0],
-      [0, 0, 0, 0, 1, 0, 0],
-      [2, 2, 0, 0, 0, 2, 2],
-      [2, 2, 0, 0, 0, 2, 2],
+      [2, 2, 1, 1, 1, 2, 2],
+      [2, 2, 1, 1, 1, 2, 2],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [2, 2, 1, 1, 1, 2, 2],
+      [2, 2, 1, 1, 1, 2, 2],
     ];
+    // this.boardTemplate = [
+    //   [2, 2, 0, 0, 0, 2, 2],
+    //   [2, 2, 1, 0, 0, 2, 2],
+    //   [0, 1, 1, 0, 1, 0, 0],
+    //   [0, 1, 1, 0, 1, 1, 0],
+    //   [0, 0, 0, 0, 1, 0, 0],
+    //   [2, 2, 0, 0, 0, 2, 2],
+    //   [2, 2, 0, 0, 0, 2, 2],
+    // ];
 
     this.rootPiece = rootPiece;
 
     this.piecesParent = new THREE.Group();
-    
     this.piecesAsideStack = [];
 
     scene.add(this.piecesParent, rootBoard);
+    
+    this.scene = scene;
   }
 
   public setupPieces() {
@@ -69,10 +74,10 @@ export default class BoardLogic {
   }
 
   public resetPiecesColors() {
-    this.pieces.forEach(row => row.forEach(piece => piece?.resetColor()));
+    this.pieces.forEach(row => row.forEach(piece => piece?.colorAsDefault()));
   }
 
-  // TODO: game logic class maybe
+  // TODO: game manager class maybe, with states
   public getCandidateMovements(): Array<PieceWithMovements> {
     const piecesToMove = new Array<PieceWithMovements>();
     // const piecesToMove = new Array<Movement>();
@@ -131,22 +136,67 @@ export default class BoardLogic {
       }
     }
     
-    if (closestDistance > 1) {
-      return null;
-    } else {
+    if (closestDistance < 1) {
       return closestMovement;
+    } else {
+      return null;
     }
   }
 
   public executeMovement(pieceToMove: PieceWithMovements, movement: Movement) {
-    
     this.movePiece(pieceToMove.pieceObject, pieceToMove.pieceCoords, movement.destination);
     this.putPieceInThrash(movement.eatenPieceCoords)
 
     // TODO: remove this, create global way of checking debug mode 'browserData'
-    if (window.location.hash === "#debug") { console.log("new board:"); this.printBoard(); }
+    if (window.location.hash === "#debug") { console.log(`moving piece ${pieceToMove.pieceCoords.x},${pieceToMove.pieceCoords.y} to ${movement.destination.x},${movement.destination.y} `); console.log("new board:"); this.printBoard(); }
   }
 
+  // TODO: get these blobs out of here for gods sake
+  public blobs: Array<Blob> = new Array<Blob>();
+  public spawnBlob(movement: Movement) {
+    const blob = new Blob(movement)
+
+    const location = this.index2DToWorldPosition(blob.movement.destination.x, blob.movement.destination.y);
+    location.y = 0.6;
+    blob.position.copy(location);
+    blob.addToScene(this.scene);
+    
+    this.blobs.push(blob);
+  }
+  
+  public getClosestBlob(mouseWorldPosition: THREE.Vector3): Blob|null {
+    let closestBlob = this.blobs[0];
+    let closestBlobDist = mouseWorldPosition.distanceTo(closestBlob.position);
+
+    for (let i = 1; i < this.blobs.length; i++) {
+      let currentBlob = this.blobs[i];
+      let currentBlobDist = mouseWorldPosition.distanceTo(currentBlob.position);
+      
+      if (currentBlobDist < closestBlobDist) {
+        closestBlobDist = currentBlobDist;
+        closestBlob = currentBlob;
+      }
+    }
+
+    if (closestBlobDist < 1) {
+      return closestBlob;
+    } else {
+      return null;
+    }
+  }
+
+  public colorBlobsAsDefault() {
+    this.blobs.forEach(blob => blob.colorAsDefault());
+  }
+
+  public colorBlobAsSelected(selectedBlob: Blob) {
+    selectedBlob.colorAsSelected();
+  }
+
+  public deleteBlobs() {
+    this.blobs.forEach(blob => blob.removeFromScene(this.scene));
+    this.blobs = new Array<Blob>();
+  }
 
 
   private movePiece(piece: Piece, pieceCoords: { x: number, y: number }, destination: { x: number, y: number } ) {
@@ -156,8 +206,6 @@ export default class BoardLogic {
     // TODO: create animation here instead of just copying position
     pieceToMove.position.copy(newPiecePos);
 
-    console.log(`moving piece ${pieceCoords.x},${pieceCoords.y} to ${destination.x},${destination.y} `);
-
     this.pieces[destination.y][destination.x] = pieceToMove;
     this.pieces[pieceCoords.y][pieceCoords.x] = null;
   }
@@ -165,7 +213,7 @@ export default class BoardLogic {
   // TODO: implement better thrash logic
   private putPieceInThrash(coords: { x: number, y: number }) {
     const pieceToRemove = this.pieces[coords.y][coords.x];
-    pieceToRemove?.resetColor();
+    pieceToRemove?.colorAsDefault();
 
     this.pieces[coords.y][coords.x] = null;
     this.piecesAsideStack.push(pieceToRemove!);
