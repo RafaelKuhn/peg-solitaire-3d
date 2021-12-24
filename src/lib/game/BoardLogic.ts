@@ -9,7 +9,7 @@ import Blob from '$lib/game/Blob';
 export default class BoardLogic {
 
   private pieces: PieceMatrix;
-  private piecesAsideStack: PieceStack;
+  private piecesTrashStack: PieceStack;
   private blobs: Array<Blob>;
 
   private rootPiece: THREE.Group;
@@ -40,15 +40,15 @@ export default class BoardLogic {
     //   [2, 2, 0, 0, 0, 2, 2],
     // ];
 
-    this.rootPiece = rootPiece;
-
-    this.piecesParent = new THREE.Group();
-    this.piecesAsideStack = [];
-    this.blobs = [];
-
-    scene.add(this.piecesParent, rootBoard);
-    
     this.scene = scene;
+    this.rootPiece = rootPiece;
+    this.piecesParent = new THREE.Group();
+    
+    this.piecesTrashStack = [];
+    this.blobs = [];
+    
+    this.scene.add(rootBoard);
+    this.scene.add(this.piecesParent);
   }
 
   public setupPieces() {
@@ -57,7 +57,7 @@ export default class BoardLogic {
     ]
     
     for (let y = 0; y < 7; y++) {
-      for (let x = 6; x >= 0; x--) {
+      for (let x = 0; x < 7; x++) {
 
         if (this.boardTemplate[y][x] !== 1) {
           this.pieces[y][x] = null;
@@ -73,6 +73,65 @@ export default class BoardLogic {
         this.pieces[y][x] = new Piece(pieceObjectGroup);
       }
     }
+  }
+
+  public reorderPieces() {
+    const remainingPieces = this.getRemainingPieces();
+    const trashPieces = this.getPiecesFromTrash()
+
+    const piecesToReorder = remainingPieces.concat(trashPieces);
+    // TODO: remove this, create global way of checking debug mode 'browserData'
+    if (window.location.hash === "#debug") { console.log(`got ${remainingPieces.length} from pieces`); console.log(`got ${trashPieces.length} from trash`); console.log(`total of ${piecesToReorder.length} pieces`); }
+
+    this.reorderPiecesInBoard(piecesToReorder);
+  }
+
+  private reorderPiecesInBoard(piecesToReorder: Array<Piece>) {
+    this.pieces = [
+      [], [], [], [], [], [], []
+    ]
+
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
+        if (this.boardTemplate[y][x] !== 1) {
+          this.pieces[y][x] = null;
+          continue;
+        }
+
+        const piecePopped = piecesToReorder.pop()!;
+        const newPiecePosition = this.index2DToWorldPosition(x, y);
+        piecePopped.position.copy(newPiecePosition);
+
+        this.pieces[y][x] = piecePopped;
+      }
+    }
+  }
+
+  private getRemainingPieces(): Array<Piece> {
+    const pieces: Array<Piece> = [];
+
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
+        const piece = this.pieces[y][x];
+        if (piece) {
+          pieces.push(piece);
+        }
+      }
+    }
+
+    return pieces;
+  }
+
+  private getPiecesFromTrash(): Array<Piece> {
+    const pieces: Array<Piece> = [];
+
+    let current = this.recoverPieceFromTrash();
+    while (current !== null) {
+      pieces.push(current);
+      current = this.recoverPieceFromTrash();
+    }
+    
+    return pieces;
   }
 
   // TODO: game manager class maybe
@@ -143,10 +202,36 @@ export default class BoardLogic {
 
   public executeMovement(pieceToMove: PieceWithMovements, movement: Movement) {
     this.movePiece(pieceToMove.pieceObject, pieceToMove.pieceCoords, movement.destination);
-    this.putPieceInThrash(movement.eatenPieceCoords)
+    this.putPieceInTrash(movement.eatenPieceCoords)
 
-    // TODO: remove this, create global way of checking debug mode 'browserData'
     if (window.location.hash === "#debug") { console.log(`moving piece ${pieceToMove.pieceCoords.x},${pieceToMove.pieceCoords.y} to ${movement.destination.x},${movement.destination.y} `); console.log("new board:"); this.printBoard(); }
+  }
+
+  private movePiece(piece: Piece, pieceCoords: { x: number, y: number }, destination: { x: number, y: number } ) {
+    const pieceToMove = piece;
+    const newPiecePos = this.index2DToWorldPosition(destination.x, destination.y);
+    
+    // TODO: create animation here instead of just copying position
+    pieceToMove.position.copy(newPiecePos);
+
+    this.pieces[destination.y][destination.x] = pieceToMove;
+    this.pieces[pieceCoords.y][pieceCoords.x] = null;
+  }
+
+  // TODO: implement better trash logic
+  private putPieceInTrash(coords: { x: number, y: number }) {
+    const pieceToRemove = this.pieces[coords.y][coords.x];
+    pieceToRemove?.colorAsDefault();
+
+    this.pieces[coords.y][coords.x] = null;
+    this.piecesTrashStack.push(pieceToRemove!);
+
+    pieceToRemove!.position.set(0, 1, -4);
+  }
+
+  private recoverPieceFromTrash(): Piece|null {
+    const pieceBack = this.piecesTrashStack.pop();
+    return pieceBack ?? null;
   }
 
   // TODO: get these blobs out of here for gods sake
@@ -200,36 +285,6 @@ export default class BoardLogic {
     this.blobs = new Array<Blob>();
   }
 
-
-  private movePiece(piece: Piece, pieceCoords: { x: number, y: number }, destination: { x: number, y: number } ) {
-    const pieceToMove = piece;
-    const newPiecePos = this.index2DToWorldPosition(destination.x, destination.y);
-    
-    // TODO: create animation here instead of just copying position
-    pieceToMove.position.copy(newPiecePos);
-
-    this.pieces[destination.y][destination.x] = pieceToMove;
-    this.pieces[pieceCoords.y][pieceCoords.x] = null;
-  }
-
-  // TODO: implement better thrash logic
-  private putPieceInThrash(coords: { x: number, y: number }) {
-    const pieceToRemove = this.pieces[coords.y][coords.x];
-    pieceToRemove?.colorAsDefault();
-
-    this.pieces[coords.y][coords.x] = null;
-    this.piecesAsideStack.push(pieceToRemove!);
-    pieceToRemove!.position.set(0, 1, -4);
-  }
-
-  private recoverPieceFromThrash(coords: { x: number, y: number }) {
-    const pieceBack = this.piecesAsideStack.pop();
-    if (!pieceBack) throw `error: pieceback should not be null ${pieceBack}`;
-    
-    this.pieces[coords.y][coords.x] = pieceBack;
-    pieceBack.position.copy(this.index2DToWorldPosition(coords.x, coords.y));
-  }
-
   private isOutOfBoard(x: number, y: number): boolean {
     if (x < 0 || y < 0 || x > 6 || y > 6) { return true; }
 
@@ -267,4 +322,5 @@ export default class BoardLogic {
 }
 
 type PieceMatrix = Array<Array<Piece|null>>;
+
 type PieceStack = Array<Piece>;

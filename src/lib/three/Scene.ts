@@ -1,6 +1,5 @@
 // packages
 import * as THREE from 'three';
-import * as dat from 'dat.gui';
 import { gsap } from 'gsap';
 
 // three
@@ -21,11 +20,8 @@ import { Utils } from '$lib/svelte/Utils';
 import UniqueDomEvent from '$lib/misc/UniqueDomEvent';
 import EventDispatcher from '$lib/misc/EventDispatcher';
 
-
-
 const TAU = 6.283185;
-const HALF_TAU = TAU * 0.5;
-const AN_EIGTH = 0.125;
+
 
 export default class {
 
@@ -115,12 +111,9 @@ export default class {
   }
 
   public restartGame() {
-    console.log("game restart");
+    this.boardLogic.reorderPieces();
+    this.setupGameLogic();
   }
-
-
-
-  
 
   private setupRaycaster() {
     const caster = new THREE.Raycaster();

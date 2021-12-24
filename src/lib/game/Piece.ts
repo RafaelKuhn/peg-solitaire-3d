@@ -39,4 +39,5 @@ export default class Piece {
   public colorAsHovered() {
     this.mesh.material = Piece.hoveredMaterial;
   }
+  
 }
