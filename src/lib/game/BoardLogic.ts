@@ -4,45 +4,50 @@ import Piece from '$lib/game/Piece';
 import Movement from '$lib/game/Movement';
 import PieceWithMovements from '$lib/game/PieceWithMovements';
 
-import Blob from '$lib/game/Blob';
+import { Blob, BlobFactory } from '$lib/game/Blob';
 
 export default class BoardLogic {
 
   private pieces: PieceMatrix;
   private piecesTrashStack: PieceStack;
+  private blobFactory: BlobFactory;
   private blobs: Array<Blob>;
 
+  // TODO: use piecesFactory instead of this
   private rootPiece: THREE.Group;
   private piecesParent: THREE.Group;
   
+
   private boardTemplate: Array<Array<number>>;
 
   private scene: THREE.Scene;
 
   constructor(scene: THREE.Scene, rootPiece: THREE.Group, rootBoard: THREE.Group) {
 
-    this.boardTemplate = [
-      [2, 2, 1, 1, 1, 2, 2],
-      [2, 2, 1, 1, 1, 2, 2],
-      [1, 1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 0, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1],
-      [2, 2, 1, 1, 1, 2, 2],
-      [2, 2, 1, 1, 1, 2, 2],
-    ];
     // this.boardTemplate = [
-    //   [2, 2, 0, 0, 0, 2, 2],
-    //   [2, 2, 1, 0, 0, 2, 2],
-    //   [0, 1, 1, 0, 1, 0, 0],
-    //   [0, 1, 1, 0, 1, 1, 0],
-    //   [0, 0, 0, 0, 1, 0, 0],
-    //   [2, 2, 0, 0, 0, 2, 2],
-    //   [2, 2, 0, 0, 0, 2, 2],
+    //   [2, 2, 1, 1, 1, 2, 2],
+    //   [2, 2, 1, 1, 1, 2, 2],
+    //   [1, 1, 1, 1, 1, 1, 1],
+    //   [1, 1, 1, 0, 1, 1, 1],
+    //   [1, 1, 1, 1, 1, 1, 1],
+    //   [2, 2, 1, 1, 1, 2, 2],
+    //   [2, 2, 1, 1, 1, 2, 2],
     // ];
+    this.boardTemplate = [
+      [2, 2, 0, 0, 0, 2, 2],
+      [2, 2, 1, 0, 0, 2, 2],
+      [0, 1, 1, 0, 1, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0],
+      [0, 0, 0, 0, 1, 0, 0],
+      [2, 2, 0, 0, 0, 2, 2],
+      [2, 2, 0, 0, 0, 2, 2],
+    ];
 
     this.scene = scene;
     this.rootPiece = rootPiece;
     this.piecesParent = new THREE.Group();
+
+    this.blobFactory = new BlobFactory(rootPiece)
     
     this.piecesTrashStack = [];
     this.blobs = [];
@@ -64,13 +69,13 @@ export default class BoardLogic {
           continue;
         }
         
-        const pieceObjectGroup = this.rootPiece.clone();
+        const pieceModelClone = this.rootPiece.clone();
         const piecePosition = this.index2DToWorldPosition(x, y);
-        pieceObjectGroup.position.copy(piecePosition);
+        pieceModelClone.position.copy(piecePosition);
         
-        this.piecesParent.add(pieceObjectGroup);
+        this.piecesParent.add(pieceModelClone);
         
-        this.pieces[y][x] = new Piece(pieceObjectGroup);
+        this.pieces[y][x] = new Piece(pieceModelClone);
       }
     }
   }
@@ -80,6 +85,7 @@ export default class BoardLogic {
     const trashPieces = this.getPiecesFromTrash()
 
     const piecesToReorder = remainingPieces.concat(trashPieces);
+    
     // TODO: remove this, create global way of checking debug mode 'browserData'
     if (window.location.hash === "#debug") { console.log(`got ${remainingPieces.length} from pieces`); console.log(`got ${trashPieces.length} from trash`); console.log(`total of ${piecesToReorder.length} pieces`); }
 
@@ -141,7 +147,7 @@ export default class BoardLogic {
     
     for (let y = 0; y < 7; y++) {
       for (let x = 0; x < 7; x++) {
-        // if isOutOfBoard, it has no piece or even a hole there
+        // if isOutOfBoard, it has no piece there
         if (this.isOutOfBoard(x, y)) continue;
 
         // if piece is null, it has a hole there
@@ -236,10 +242,9 @@ export default class BoardLogic {
 
   // TODO: get these blobs out of here for gods sake
   public spawnBlob(movement: Movement) {
-    const blob = new Blob(movement)
+    const blob = this.blobFactory.createBlob(movement)
 
     const location = this.index2DToWorldPosition(blob.movement.destination.x, blob.movement.destination.y);
-    location.y = 0.6;
     blob.position.copy(location);
     blob.addToScene(this.scene);
     
@@ -273,11 +278,11 @@ export default class BoardLogic {
   }
 
   public colorBlobsAsDefault() {
-    this.blobs.forEach(blob => blob.colorAsDefault());
+    this.blobs.forEach(blob => this.blobFactory.colorBlobAsDefault(blob));
   }
 
   public colorBlobAsSelected(selectedBlob: Blob) {
-    selectedBlob.colorAsSelected();
+    this.blobFactory.colorBlobAsSelected(selectedBlob);
   }
 
   public deleteBlobs() {

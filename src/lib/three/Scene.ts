@@ -236,7 +236,7 @@ export default class {
           
           if (closestBlob) {
             this.changeCursorToPointer();
-            closestBlob.colorAsSelected();
+            this.boardLogic.colorBlobAsSelected(closestBlob);
 
             const executeMovementAtBlob = () => {
               this.boardLogic.executeMovement(piece, closestBlob.movement);
@@ -300,7 +300,6 @@ export default class {
     }
   }
 
-  // TODO: board animations class
   private changeCursorToPointer() {
     document.body.style.cursor = "pointer";
   }

@@ -3,32 +3,48 @@ import type Movement from '$lib/game/Movement';
 import * as THREE from 'three';
 
 
-export default class Blob {
+export class BlobFactory {
+
+  private _blobRootModel: THREE.Group;
+  private _defaultMaterial: THREE.MeshStandardMaterial;
+  private _selectedBlobMaterial: THREE.MeshStandardMaterial;
+
+  constructor(blobModel: THREE.Group) {
+    this._blobRootModel = blobModel;
+
+    const blobColor = 0xff2600;
+    this._defaultMaterial = new THREE.MeshStandardMaterial({ color: blobColor, opacity: 0.3 })
+    this._defaultMaterial.transparent = true;
+    
+    this._selectedBlobMaterial = new THREE.MeshStandardMaterial({ color: blobColor });
+  }
+
+  public createBlob(movement: Movement): Blob {
+    const blobClone = this._blobRootModel.clone();
+    const blob = new Blob(blobClone, movement);
+    blob.colorAs(this._defaultMaterial);
+    return blob;
+  }
+
+  public colorBlobAsDefault(blob: Blob): void {
+    blob.colorAs(this._defaultMaterial);
+  }
+
+  public colorBlobAsSelected(blob: Blob): void {
+    blob.colorAs(this._selectedBlobMaterial);
+  }
+
+}
+
+export class Blob {
+
+  private _model: THREE.Group;
   private _mesh: THREE.Mesh;
   private _movement: Movement;
-  
-  // TODO: use typescript 4.4 static block feature (not yet supported)
-  private static isMemoryLoaded: boolean = false;
-
-  private static blobGeometry: THREE.BoxBufferGeometry;
-  private static defaultMaterial: THREE.MeshStandardMaterial;
-  public static selectedBlobMaterial: THREE.MeshStandardMaterial;
-
-  constructor (movement: Movement) {
     
-    if (!Blob.isMemoryLoaded) {
-      Blob.defaultMaterial = new THREE.MeshStandardMaterial({ color: 0xff2600, opacity: 0.3 })
-      Blob.selectedBlobMaterial = new THREE.MeshStandardMaterial();
-    
-      Blob.selectedBlobMaterial.copy(Blob.defaultMaterial);
-      Blob.defaultMaterial.transparent = true;
-
-      Blob.blobGeometry =  new THREE.BoxBufferGeometry(0.3, 0.6, 0.3, 1, 1, 1),
-      
-      Blob.isMemoryLoaded = true;
-    }
-
-    this._mesh = new THREE.Mesh(Blob.blobGeometry, Blob.defaultMaterial);
+  constructor(modelGroup: THREE.Group, movement: Movement) {  
+    this._model = modelGroup;
+    this._mesh = modelGroup.children[0] as THREE.Mesh;
     this._movement = movement;
   }
 
@@ -40,20 +56,16 @@ export default class Blob {
     return this._movement;
   }
   
-  public colorAsDefault() {
-    this._mesh.material = Blob.defaultMaterial;
+  public addToScene(scene: THREE.Scene): void {
+    scene.add(this._model);
   }
 
-  public colorAsSelected() {
-    this._mesh.material = Blob.selectedBlobMaterial;
+  public removeFromScene(scene: THREE.Scene): void {
+    scene.remove(this._model);
   }
 
-  public addToScene(scene: THREE.Scene) {
-    scene.add(this._mesh);
-  }
-
-  public removeFromScene(scene: THREE.Scene) {
-    scene.remove(this._mesh);
+  public colorAs(material: THREE.Material): void {
+    this._mesh.material = material;
   }
 }
 
