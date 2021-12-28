@@ -108,6 +108,7 @@ export default class {
   }
 
   public restartGame() {
+    this.boardLogic.deleteBlobs();
     this.boardLogic.reorderPieces();
     this.setupGameLogic();
   }
