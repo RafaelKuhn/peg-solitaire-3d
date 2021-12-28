@@ -1,7 +1,3 @@
-<script>
-  import { pageTitle } from '$lib/svelte/Stores';
-</script>
-
 <style>
   background {
     position: absolute;
@@ -24,12 +20,11 @@
 
   h2 {
     margin: 0;
-    /* height: 3.5vh; */
     font-size: 3.5vh;
   }
 </style>
 
 
 <background>
-  <h2>{$pageTitle.text}</h2>
+  <h2>{"Resta Um 🎮🎲"}</h2>
 </background>

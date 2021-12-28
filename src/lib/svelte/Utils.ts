@@ -1,12 +1,10 @@
 
 export class Utils {
-  private static isMobile: boolean|null = null;
-  public static get IsMobile() {
-    if (Utils.isMobile === null) {
-      Utils.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-    return Utils.isMobile;
-  }
 
+  public static get IsMobile(): boolean {
+    const userAgentMobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+    const isMobile = userAgentMobileRegex.test(navigator.userAgent);    
+    return isMobile;
+  }
 
 }

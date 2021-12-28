@@ -12,9 +12,8 @@ import autoResize from "$lib/three/AutoResize";
 import BoardLogic from "$lib/game/BoardLogic";
 import type PieceWithMovements from '$lib/game/PieceWithMovements';
 
-// svelte
-import { pageTitle } from "$lib/svelte/Stores";
-import { Utils } from '$lib/svelte/Utils';
+// // svelte
+// import { Utils } from '$lib/svelte/Utils';
 
 // misc
 import UniqueDomEvent from '$lib/misc/UniqueDomEvent';
@@ -53,7 +52,6 @@ export default class {
   public async loadScene(canvas: HTMLCanvasElement) {
 
     this.isDebugMode = window.location.hash === "#debug";
-    pageTitle.update(() => ({ text: "Carregando..." }));
 
     this.setupLights();
 
@@ -85,7 +83,6 @@ export default class {
     await resources.loadResources();
 
     loadingScreen.dispose();
-    pageTitle.update(() => ({ text: "Resta Um 🎮🎲"}));
 
     this.scene.background = resources.items["skybox"];
     this.camera.position.set(10.571, 8.536, 4.785);

@@ -65,6 +65,6 @@
 
 <div>
     
-  <button on:click={() => dispatch("resetButtonClicked")} class:hoverable={isDesktop} />
+  <button on:click={() => dispatch("restartButtonClicked")} class:hoverable={isDesktop} />
 
 </div>
