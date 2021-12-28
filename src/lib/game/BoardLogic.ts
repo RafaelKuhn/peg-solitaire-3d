@@ -24,24 +24,21 @@ export default class BoardLogic {
 
   constructor(scene: THREE.Scene, rootPiece: THREE.Group, rootBoard: THREE.Group) {
 
-    // this.boardTemplate = [
-    //   [2, 2, 1, 1, 1, 2, 2],
-    //   [2, 2, 1, 1, 1, 2, 2],
-    //   [1, 1, 1, 1, 1, 1, 1],
-    //   [1, 1, 1, 0, 1, 1, 1],
-    //   [1, 1, 1, 1, 1, 1, 1],
-    //   [2, 2, 1, 1, 1, 2, 2],
-    //   [2, 2, 1, 1, 1, 2, 2],
-    // ];
     this.boardTemplate = [
-      [2, 2, 0, 0, 0, 2, 2],
-      [2, 2, 1, 0, 0, 2, 2],
-      [0, 1, 1, 0, 1, 0, 0],
-      [0, 1, 1, 0, 1, 1, 0],
-      [0, 0, 0, 0, 1, 0, 0],
-      [2, 2, 0, 0, 0, 2, 2],
-      [2, 2, 0, 0, 0, 2, 2],
+      [2, 2, 1, 1, 1, 2, 2],
+      [2, 2, 1, 1, 1, 2, 2],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [2, 2, 1, 1, 1, 2, 2],
+      [2, 2, 1, 1, 1, 2, 2],
     ];
+
+    // blobs debug
+    // this.boardTemplate = [ [2, 2, 0, 0, 0, 2, 2], [2, 2, 1, 0, 0, 2, 2], [0, 1, 1, 0, 1, 0, 0], [0, 1, 1, 0, 1, 1, 0], [0, 0, 0, 0, 1, 0, 0], [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 0, 0, 2, 2], ];
+    
+    // win panel debug
+    // this.boardTemplate = [ [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 1, 0, 2, 2], [0, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 0, 0, 2, 2], ];
 
     this.scene = scene;
     this.rootPiece = rootPiece;
@@ -56,7 +53,7 @@ export default class BoardLogic {
     this.scene.add(this.piecesParent);
   }
 
-  public setupPieces() {
+  public setupPieces(): void {
     this.pieces = [
       [], [], [], [], [], [], []
     ]
@@ -78,72 +75,39 @@ export default class BoardLogic {
         this.pieces[y][x] = new Piece(pieceModelClone);
       }
     }
+
+    if (window.location.hash === "#debug") { console.log("starting board:"); this.printBoard(); }
   }
 
-  public reorderPieces() {
+  public countRemaningPieces(): number {
+    let count = 0;
+
+    this.pieces.forEach(row => {
+      row.forEach(piece => {
+        if (piece) {
+          count++
+        }
+      })
+    });
+
+    return count; 
+  }
+
+  public reorderPieces(): void {
     const remainingPieces = this.getRemainingPieces();
     const trashPieces = this.getPiecesFromTrash()
 
     const piecesToReorder = remainingPieces.concat(trashPieces);
     
-    // TODO: remove this, create global way of checking debug mode 'browserData'
-    if (window.location.hash === "#debug") { console.log(`got ${remainingPieces.length} from pieces`); console.log(`got ${trashPieces.length} from trash`); console.log(`total of ${piecesToReorder.length} pieces`); }
-
     this.reorderPiecesInBoard(piecesToReorder);
-  }
-
-  private reorderPiecesInBoard(piecesToReorder: Array<Piece>) {
-    this.pieces = [
-      [], [], [], [], [], [], []
-    ]
-
-    for (let y = 0; y < 7; y++) {
-      for (let x = 0; x < 7; x++) {
-        if (this.boardTemplate[y][x] !== 1) {
-          this.pieces[y][x] = null;
-          continue;
-        }
-
-        const piecePopped = piecesToReorder.pop()!;
-        const newPiecePosition = this.index2DToWorldPosition(x, y);
-        piecePopped.position.copy(newPiecePosition);
-
-        this.pieces[y][x] = piecePopped;
-      }
-    }
-  }
-
-  private getRemainingPieces(): Array<Piece> {
-    const pieces: Array<Piece> = [];
-
-    for (let y = 0; y < 7; y++) {
-      for (let x = 0; x < 7; x++) {
-        const piece = this.pieces[y][x];
-        if (piece) {
-          pieces.push(piece);
-        }
-      }
-    }
-
-    return pieces;
-  }
-
-  private getPiecesFromTrash(): Array<Piece> {
-    const pieces: Array<Piece> = [];
-
-    let current = this.recoverPieceFromTrash();
-    while (current !== null) {
-      pieces.push(current);
-      current = this.recoverPieceFromTrash();
-    }
     
-    return pieces;
+    // TODO: remove this, create global way of checking debug mode 'browserData'
+    if (window.location.hash === "#debug") { console.log(`pieces reordered: ${remainingPieces.length} from board, ${trashPieces.length} from trash`); this.printBoard(); }
   }
 
   // TODO: game manager class maybe
   public getCandidateMovements(): Array<PieceWithMovements> {
     const piecesToMove = new Array<PieceWithMovements>();
-    // const piecesToMove = new Array<Movement>();
     
     for (let y = 0; y < 7; y++) {
       for (let x = 0; x < 7; x++) {
@@ -206,14 +170,62 @@ export default class BoardLogic {
     }
   }
 
-  public executeMovement(pieceToMove: PieceWithMovements, movement: Movement) {
+  public executeMovement(pieceToMove: PieceWithMovements, movement: Movement): void {
     this.movePiece(pieceToMove.pieceObject, pieceToMove.pieceCoords, movement.destination);
     this.putPieceInTrash(movement.eatenPieceCoords)
 
-    if (window.location.hash === "#debug") { console.log(`moving piece ${pieceToMove.pieceCoords.x},${pieceToMove.pieceCoords.y} to ${movement.destination.x},${movement.destination.y} `); console.log("new board:"); this.printBoard(); }
+    if (window.location.hash === "#debug") { console.log(`moving piece ${pieceToMove.pieceCoords.x},${pieceToMove.pieceCoords.y} to ${movement.destination.x},${movement.destination.y} `); console.log("board:"); this.printBoard(); }
   }
 
-  private movePiece(piece: Piece, pieceCoords: { x: number, y: number }, destination: { x: number, y: number } ) {
+  private reorderPiecesInBoard(piecesToReorder: Array<Piece>) {
+    this.pieces = [
+      [], [], [], [], [], [], []
+    ]
+
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
+        if (this.boardTemplate[y][x] !== 1) {
+          this.pieces[y][x] = null;
+          continue;
+        }
+
+        const piecePopped = piecesToReorder.pop()!;
+        const newPiecePosition = this.index2DToWorldPosition(x, y);
+        piecePopped.position.copy(newPiecePosition);
+
+        this.pieces[y][x] = piecePopped;
+      }
+    }
+  }
+
+  private getRemainingPieces(): Array<Piece> {
+    const pieces: Array<Piece> = [];
+
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
+        const piece = this.pieces[y][x];
+        if (piece) {
+          pieces.push(piece);
+        }
+      }
+    }
+
+    return pieces;
+  }
+
+  private getPiecesFromTrash(): Array<Piece> {
+    const pieces: Array<Piece> = [];
+
+    let current = this.recoverPieceFromTrash();
+    while (current !== null) {
+      pieces.push(current);
+      current = this.recoverPieceFromTrash();
+    }
+    
+    return pieces;
+  }
+
+  private movePiece(piece: Piece, pieceCoords: { x: number, y: number }, destination: { x: number, y: number }): void {
     const pieceToMove = piece;
     const newPiecePos = this.index2DToWorldPosition(destination.x, destination.y);
     
@@ -225,7 +237,7 @@ export default class BoardLogic {
   }
 
   // TODO: implement better trash logic
-  private putPieceInTrash(coords: { x: number, y: number }) {
+  private putPieceInTrash(coords: { x: number, y: number }): void {
     const pieceToRemove = this.pieces[coords.y][coords.x];
     pieceToRemove?.colorAsDefault();
 
@@ -241,7 +253,7 @@ export default class BoardLogic {
   }
 
   // TODO: get these blobs out of here for gods sake
-  public spawnBlob(movement: Movement) {
+  public spawnBlob(movement: Movement): void {
     const blob = this.blobFactory.createBlob(movement)
 
     const location = this.index2DToWorldPosition(blob.movement.destination.x, blob.movement.destination.y);
@@ -273,11 +285,11 @@ export default class BoardLogic {
   }
   // end blobs
 
-  public resetPiecesColors() {
+  public resetPiecesColors(): void {
     this.pieces.forEach(row => row.forEach(piece => piece?.colorAsDefault()));
   }
 
-  public colorBlobsAsDefault() {
+  public colorBlobsAsDefault(): void {
     this.blobs.forEach(blob => this.blobFactory.colorBlobAsDefault(blob));
   }
 
@@ -285,11 +297,15 @@ export default class BoardLogic {
     this.blobFactory.colorBlobAsSelected(selectedBlob);
   }
 
-  public deleteBlobs() {
+  public deleteBlobs(): void {
     this.blobs.forEach(blob => blob.removeFromScene(this.scene));
     this.blobs = new Array<Blob>();
   }
 
+  private isNotOutOfBoard(x: number, y: number): boolean {
+    return (!this.isOutOfBoard(x, y));
+  }
+  
   private isOutOfBoard(x: number, y: number): boolean {
     if (x < 0 || y < 0 || x > 6 || y > 6) { return true; }
 
@@ -297,10 +313,6 @@ export default class BoardLogic {
     const possibleYCorner = (y <= 1 || y >= 5);
     
     return (possibleXCorner && possibleYCorner);
-  }
-
-  private isNotOutOfBoard(x: number, y: number): boolean {
-    return (!this.isOutOfBoard(x, y));
   }
 
   private index2DToWorldPosition(x: number, y: number): THREE.Vector3 {

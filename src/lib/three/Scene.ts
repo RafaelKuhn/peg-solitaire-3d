@@ -12,12 +12,13 @@ import autoResize from "$lib/three/AutoResize";
 import BoardLogic from "$lib/game/BoardLogic";
 import type PieceWithMovements from '$lib/game/PieceWithMovements';
 
-// // svelte
-// import { Utils } from '$lib/svelte/Utils';
+// svelte
+import { gameStatus } from '$lib/svelte/GameStatus';
 
 // misc
 import UniqueDomEvent from '$lib/misc/UniqueDomEvent';
 import EventDispatcher from '$lib/misc/EventDispatcher';
+
 
 const TAU = 6.283185;
 
@@ -49,7 +50,7 @@ export default class {
     this.onBoardHover = new EventDispatcher<THREE.Vector3>();
   } 
 
-  public async loadScene(canvas: HTMLCanvasElement) {
+  public async setupScene(canvas: HTMLCanvasElement) {
 
     this.isDebugMode = window.location.hash === "#debug";
 
@@ -110,6 +111,7 @@ export default class {
   public restartGame() {
     this.boardLogic.deleteBlobs();
     this.boardLogic.reorderPieces();
+
     this.setupGameLogic();
   }
 
@@ -206,7 +208,7 @@ export default class {
 
       const clickPieceWithOneMovement = (piece: PieceWithMovements) => {
         
-        if (this.isDebugMode) { console.log(`clicked piece, only 1 possible movement`); console.log(piece.pieceCoords); }
+        if (this.isDebugMode) { console.log(`clicked piece ${piece.pieceCoords.x},${piece.pieceCoords.y}, only 1 possible movement`); }
         
         this.changeCursorToDefault();
 
@@ -218,7 +220,7 @@ export default class {
         
         resetClickAndHoverEvents();
 
-        if (this.isDebugMode) { console.log(`clicked piece ${piece.pieceCoords.x}, ${piece.pieceCoords.y}, with ${piece.movements.length} possible movements`); }
+        if (this.isDebugMode) { console.log(`clicked piece ${piece.pieceCoords.x},${piece.pieceCoords.y} with ${piece.movements.length} possible movements`); }
         
         this.changeCursorToDefault();
         this.boardLogic.resetPiecesColors();
@@ -259,7 +261,15 @@ export default class {
   }
 
   private endGame() {
-    console.log("you lost or won the game lol");
+    const remainingPiecesCount = this.boardLogic.countRemaningPieces();
+
+    if (this.isDebugMode) console.log(`game ended with ${remainingPiecesCount} pieces`);
+    
+    if (remainingPiecesCount === 1) {
+      gameStatus.set("hasWon")
+    } else {
+      gameStatus.set("hasLost")
+    }
   }
   // end game logic
 

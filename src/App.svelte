@@ -3,22 +3,21 @@
 </svelte:head>
 
 <script lang="ts">
-  import WebGLCanvas from "$lib/svelte/WebGLCanvas.svelte";
+  import WebGLGame from "$lib/svelte/WebGLGame.svelte";
   import TopPanel from '$lib/svelte/TopPanel.svelte';
   import BottomPanel from "$lib/svelte/BottomPanel.svelte";
   import LoadingScreen from "$lib/svelte/LoadingScreen.svelte";
 
-  let background: WebGLCanvas;
-  let isLoaded: boolean = false;
+  let game: WebGLGame;
+  let isLoading: boolean = true;
   
 </script>
 
-<WebGLCanvas bind:this={background} on:sceneLoaded={() => isLoaded = true} />
+<WebGLGame bind:this={game} on:sceneLoaded={() => isLoading = false} />
   
-{#if isLoaded}
-  <TopPanel />
-  
-  <BottomPanel on:restartButtonClicked={background.restartGame} />
-{:else}
+{#if isLoading}
   <LoadingScreen />
+{:else}
+  <TopPanel />
+  <BottomPanel on:restartButtonClicked={game.restartGame} />
 {/if}
