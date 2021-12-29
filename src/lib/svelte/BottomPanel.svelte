@@ -27,7 +27,7 @@
     background-color: transparent;
 
     /* background:  */
-    background-image: url("/static/images/restart-button2.png");
+    background-image: url("/static/images/restart-button.png");
     background-position: center;
     background-size: 100%;
     background-repeat: no-repeat;
@@ -40,24 +40,25 @@
     transform: scale(1.04);
   }
 
-  /* button:hover {
-    transform: scale(1.04);
-  } */
-
   button:active {
     transition: none;
-    /* TODO: find a way to precache url("shit") so it flickers instantly when clicked */
-    background-image: url("/static/images/restart-button.png");
+    background-image: url("/static/images/restart-button-clicked.png");
     background-color: transparent;
     border-color: transparent;
   }
 
 </style>
 
-<script>
+<script lang="ts">
   import { Utils } from "$lib/svelte/Utils";
   import { createEventDispatcher } from "svelte";
   
+  function preloadClickedButtonBackground() {
+    (new Image()).src = "/static/images/restart-button-clicked.png";
+  }
+
+  preloadClickedButtonBackground();
+
   let isDesktop = !Utils.IsMobile;
 
   const dispatch = createEventDispatcher();

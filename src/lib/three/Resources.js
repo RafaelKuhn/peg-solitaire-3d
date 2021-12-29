@@ -3,7 +3,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 export default class {
 
-  items = {}
+  items = [];
 
   // TODO: use enums and refactor to typescript
   // could make it take 5 seconds to load to preview changes in loading screen
@@ -73,7 +73,7 @@ export default class {
       this.#textureLoader.load(path, texture => {
         this.items[key] = texture;
         this.#makeProgress();
-        resolve();
+        resolve(null);
       })
     });
   }
@@ -87,7 +87,7 @@ export default class {
       this.#cubeTextureLoader.load(pathsToLoad, cubemap => {
         this.items[key] = cubemap;
         this.#makeProgress();
-        resolve();
+        resolve(null);
       })
     })
   }
@@ -99,7 +99,7 @@ export default class {
       this.#glbLoader.load(path, glbObject => {
         this.items[key] = glbObject;
         this.#makeProgress();
-        resolve();
+        resolve(null);
       })
     })
   }
