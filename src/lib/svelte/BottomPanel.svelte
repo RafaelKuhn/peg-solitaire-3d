@@ -53,15 +53,13 @@
   import { Utils } from "$lib/svelte/Utils";
   import { createEventDispatcher } from "svelte";
   
-  function preloadClickedButtonBackground() {
-    (new Image()).src = "/static/images/restart-button-clicked.png";
-  }
-
-  preloadClickedButtonBackground();
+  // this weird stuff preloads clicked button background
+  (new Image()).src = "/static/images/restart-button-clicked.png";
 
   let isDesktop = !Utils.IsMobile;
 
   const dispatch = createEventDispatcher();
+
 </script>
 
 <div>

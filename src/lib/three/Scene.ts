@@ -1,6 +1,6 @@
 // packages
 import * as THREE from 'three';
-import { gsap } from 'gsap';
+// import { gsap } from 'gsap';
 
 // three
 import Resources from '$lib/three/Resources';
@@ -13,12 +13,11 @@ import BoardLogic from "$lib/game/BoardLogic";
 import type PieceWithMovements from '$lib/game/PieceWithMovements';
 
 // svelte
-import { gameStatus } from '$lib/svelte/GameStatus';
+import gameStatus from '$lib/svelte/GameStatus';
 
 // misc
 import UniqueDomEvent from '$lib/misc/UniqueDomEvent';
 import EventDispatcher from '$lib/misc/EventDispatcher';
-
 
 const TAU = 6.283185;
 
@@ -34,7 +33,7 @@ export default class {
   // game logic
   private boardLogic: BoardLogic;
   
-  // TODO: change these to another place, like 'browserData' to replace "Utils bad class"
+  // TODO: change these to another place, like 'browserData' to replace "Utils.ts bad class"
   private mousePosition: THREE.Vector2;
   private viewport: Viewport;
   private isDebugMode: Boolean = false;
@@ -122,31 +121,29 @@ export default class {
     const onMouseMove = new UniqueDomEvent("mousemove");
 
     let hits: THREE.Intersection<THREE.Object3D<THREE.Event>>[];
-    let doRaycast: (any?) => void;
+    let doRaycast: () => void;
 
+    // setup prod raycaster
+    doRaycast = () => {
+      caster.setFromCamera(this.mousePosition, this.camera);
+      hits = caster.intersectObject(planeRaycastObject);
+      if (hits.length !== 0) {
+        this.onBoardHover.dispatch(hits[0].point);
+      }
+    }
+
+    // setup debug raycaster
     if (this.isDebugMode) {
-
       const ball = new THREE.Mesh(new THREE.SphereBufferGeometry(0.1, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
       this.scene.add(ball);
 
-      // setup debug raycaster
       doRaycast = () => {
         caster.setFromCamera(this.mousePosition, this.camera);
         hits = caster.intersectObject(planeRaycastObject);
-        
+
         if (hits.length !== 0) {
           this.onBoardHover.dispatch(hits[0].point);
           ball.position.copy(hits[0].point);
-        }
-      }
-    } else {
-      
-      // setup prod raycaster
-      doRaycast = () => {
-        caster.setFromCamera(this.mousePosition, this.camera);
-        hits = caster.intersectObject(planeRaycastObject);
-        if (hits.length !== 0) {
-          this.onBoardHover.dispatch(hits[0].point);
         }
       }
     }

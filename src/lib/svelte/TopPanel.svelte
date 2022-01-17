@@ -14,8 +14,8 @@
 
     top: 0;
     background-color: #720b98bd;
-    border-bottom-left-radius: 4vh;
-    border-bottom-right-radius: 4vh;
+    border-bottom-left-radius: 2vh;
+    border-bottom-right-radius: 2vh;
   }
 
   h2 {
