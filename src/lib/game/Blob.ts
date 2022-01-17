@@ -12,7 +12,7 @@ export class BlobFactory {
   constructor(blobModel: THREE.Group) {
     this._blobRootModel = blobModel;
 
-    const blobColor = 0xff2600;
+    const blobColor = 0x008000;
     this._defaultMaterial = new THREE.MeshStandardMaterial({ color: blobColor, opacity: 0.3 })
     this._defaultMaterial.transparent = true;
     

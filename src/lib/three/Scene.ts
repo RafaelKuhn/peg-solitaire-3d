@@ -218,7 +218,7 @@ export default class {
         
         this.changeCursorToDefault();
         this.boardLogic.resetPiecesColors();
-        piece.pieceObject.colorAsHovered();
+        piece.pieceObject.colorAsMovable();
 
         for (const movement of piece.movements!) {
           this.boardLogic.spawnBlob(movement);
