@@ -57,9 +57,9 @@
 
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { Utils } from "$lib/svelte/Utils";
+  import BrowserData from "$lib/svelte/BrowserData";
 
-  let panelClass = Utils.IsMobile ? 'mobilePanel' : 'desktopPanel';
+  let panelClass = BrowserData.IsMobile ? 'mobilePanel' : 'desktopPanel';
 
 	const fadeConfig = { duration: 150 }
 

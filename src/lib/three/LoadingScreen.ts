@@ -20,9 +20,9 @@ export default class LoadingScreen {
       new THREE.IcosahedronBufferGeometry(10,2),
       new THREE.MeshBasicMaterial({
         map: this.gradientTexture([[0.75,0.6,0.4,0.25], ['#00111a', '#4b5f7f', '#34726e', '#34726e']]),
-        side:THREE.BackSide,
+        side: THREE.BackSide,
         depthWrite: false,
-        fog:false
+        fog: false
       })
     );
 
@@ -37,14 +37,14 @@ export default class LoadingScreen {
 
   private gradientTexture(colorStopMatrix) {
     var c = document.createElement("canvas");
-    var ct = c.getContext("2d");
+    var ct = c.getContext("2d")!;
     var size = 1024;
     c.width = 16; c.height = size;
     var gradient = ct.createLinearGradient(0,0,0,size);
     var i = colorStopMatrix[0].length;
     while(i--) { gradient.addColorStop(colorStopMatrix[0][i],colorStopMatrix[1][i]); }
     ct.fillStyle = gradient;
-    ct.fillRect(0,0,16,size);
+    ct.fillRect(0, 0, 16, size);
     var texture = new THREE.Texture(c);
     texture.needsUpdate = true;
     return texture;

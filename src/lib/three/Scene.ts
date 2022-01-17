@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import Resources from '$lib/three/Resources';
 import Ticker from '$lib/three/Ticker';
 import LoadingScreen from "$lib/three/LoadingScreen";
+import BrowserData from '$lib/svelte/BrowserData';
 import autoResize from "$lib/three/AutoResize";
 
 // game
@@ -33,10 +34,8 @@ export default class {
   // game logic
   private boardLogic: BoardLogic;
   
-  // TODO: change these to another place, like 'browserData' to replace "Utils.ts bad class"
   private mousePosition: THREE.Vector2;
   private viewport: Viewport;
-  private isDebugMode: Boolean = false;
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -51,15 +50,13 @@ export default class {
 
   public async setupScene(canvas: HTMLCanvasElement) {
 
-    this.isDebugMode = window.location.hash === "#debug";
-
     this.setupLights();
 
     // Data
     window.addEventListener("mousemove", (evt) => {
       // cursor will go from 0 to 1.0 screen space
       this.mousePosition.x = evt.clientX/this.viewport.width * 2 - 1;
-      this.mousePosition.y = (1-evt.clientY/this.viewport.height) * 2 - 1;
+      this.mousePosition.y = (1 - evt.clientY/this.viewport.height) * 2 - 1;
     })
 
     this.scene.add(this.camera)
@@ -85,7 +82,7 @@ export default class {
     loadingScreen.dispose();
 
     this.scene.background = resources.items["skybox"];
-    this.camera.position.set(10.571, 8.536, 4.785);
+    this.camera.position.set(10.571, 8.536, 4.785); // camera position to look at the board in an angle
   
     const sceneFocus = new THREE.Vector3(0, -2, 0);
     this.camera.lookAt(sceneFocus);
@@ -101,7 +98,7 @@ export default class {
     this.setupGameLogic();
 
     // Debug
-    if (this.isDebugMode) {
+    if (BrowserData.IsDebugMode) {
       const helper = new THREE.AxesHelper(100);
       this.scene.add(helper);
     }
@@ -133,7 +130,7 @@ export default class {
     }
 
     // setup debug raycaster
-    if (this.isDebugMode) {
+    if (BrowserData.IsDebugMode) {
       const ball = new THREE.Mesh(new THREE.SphereBufferGeometry(0.1, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
       this.scene.add(ball);
 
@@ -174,7 +171,7 @@ export default class {
         return;
       }
 
-      if (this.isDebugMode) { console.log(`${movablePieces.length} movable pieces`); }
+      if (BrowserData.IsDebugMode) { console.log(`${movablePieces.length} movable pieces`); }
 
       movablePieces.forEach(piece => piece.pieceObject.colorAsMovable());
       let pieceBeingHovered: PieceWithMovements|null;
@@ -205,7 +202,7 @@ export default class {
 
       const clickPieceWithOneMovement = (piece: PieceWithMovements) => {
         
-        if (this.isDebugMode) { console.log(`clicked piece ${piece.pieceCoords.x},${piece.pieceCoords.y}, only 1 possible movement`); }
+        if (BrowserData.IsDebugMode) { console.log(`clicked piece ${piece.pieceCoords.x},${piece.pieceCoords.y}, only 1 possible movement`); }
         
         this.changeCursorToDefault();
 
@@ -217,7 +214,7 @@ export default class {
         
         resetClickAndHoverEvents();
 
-        if (this.isDebugMode) { console.log(`clicked piece ${piece.pieceCoords.x},${piece.pieceCoords.y} with ${piece.movements.length} possible movements`); }
+        if (BrowserData.IsDebugMode) { console.log(`clicked piece ${piece.pieceCoords.x},${piece.pieceCoords.y} with ${piece.movements.length} possible movements`); }
         
         this.changeCursorToDefault();
         this.boardLogic.resetPiecesColors();
@@ -260,7 +257,7 @@ export default class {
   private endGame() {
     const remainingPiecesCount = this.boardLogic.countRemaningPieces();
 
-    if (this.isDebugMode) console.log(`game ended with ${remainingPiecesCount} pieces`);
+    if (BrowserData.IsDebugMode) console.log(`game ended with ${remainingPiecesCount} pieces`);
     
     if (remainingPiecesCount === 1) {
       gameStatus.set("hasWon")
@@ -278,7 +275,7 @@ export default class {
     mesh.rotation.x = -0.25 * TAU;
     this.scene.add(mesh);
 
-    if (this.isDebugMode) {
+    if (BrowserData.IsDebugMode) {
       mesh.material = new THREE.MeshNormalMaterial({ normalMapType: THREE.TangentSpaceNormalMap, wireframe: true });
     } else {
       mesh.visible = false;
@@ -296,7 +293,7 @@ export default class {
     directional.position.y += 2;
     this.scene.add(directional)
 
-    if (this.isDebugMode) {
+    if (BrowserData.IsDebugMode) {
       const directionalHelper = new THREE.DirectionalLightHelper(directional);
       this.scene.add(directionalHelper)
       let lightHelper = new THREE.AxesHelper(0.5)

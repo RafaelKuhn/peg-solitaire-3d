@@ -50,13 +50,13 @@
 </style>
 
 <script lang="ts">
-  import { Utils } from "$lib/svelte/Utils";
-  import { createEventDispatcher } from "svelte";
+	import { createEventDispatcher } from "svelte";
+  import BrowserData from "$lib/svelte/BrowserData";
   
   // this weird stuff preloads clicked button background
   (new Image()).src = "/static/images/restart-button-clicked.png";
 
-  let isDesktop = !Utils.IsMobile;
+  let isDesktop = !BrowserData.IsMobile;
 
   const dispatch = createEventDispatcher();
 

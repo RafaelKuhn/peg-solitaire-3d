@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import Piece from '$lib/game/Piece';
 import Movement from '$lib/game/Movement';
 import PieceWithMovements from '$lib/game/PieceWithMovements';
+import BrowserData from '$lib/svelte/BrowserData';
 
 import { Blob, BlobFactory } from '$lib/game/Blob';
 
@@ -38,7 +39,7 @@ export default class BoardLogic {
     // this.boardTemplate = [ [2, 2, 0, 0, 0, 2, 2], [2, 2, 1, 0, 0, 2, 2], [0, 1, 1, 0, 1, 0, 0], [0, 1, 1, 0, 1, 1, 0], [0, 0, 0, 0, 1, 0, 0], [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 0, 0, 2, 2], ];
     
     // win panel debug
-    this.boardTemplate = [ [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 1, 0, 2, 2], [0, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 0, 0, 2, 2], ];
+    // this.boardTemplate = [ [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 1, 0, 2, 2], [0, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 0, 0, 2, 2], ];
 
     this.scene = scene;
     this.rootPiece = rootPiece;
@@ -76,7 +77,7 @@ export default class BoardLogic {
       }
     }
 
-    if (window.location.hash === "#debug") { console.log("starting board:"); this.printBoard(); }
+    if (BrowserData.IsDebugMode) { console.log("starting board:"); this.printBoard(); }
   }
 
   public countRemaningPieces(): number {
@@ -101,8 +102,7 @@ export default class BoardLogic {
     
     this.reorderPiecesInBoard(piecesToReorder);
     
-    // TODO: remove this, create global way of checking debug mode 'browserData'
-    if (window.location.hash === "#debug") { console.log(`pieces reordered: ${remainingPieces.length} from board, ${trashPieces.length} from trash`); this.printBoard(); }
+    if (BrowserData.IsDebugMode) { console.log(`pieces reordered: ${remainingPieces.length} from board, ${trashPieces.length} from trash`); this.printBoard(); }
   }
 
   // TODO: game manager class maybe
@@ -174,7 +174,7 @@ export default class BoardLogic {
     this.movePiece(pieceToMove.pieceObject, pieceToMove.pieceCoords, movement.destination);
     this.putPieceInTrash(movement.eatenPieceCoords)
 
-    if (window.location.hash === "#debug") { console.log(`moving piece ${pieceToMove.pieceCoords.x},${pieceToMove.pieceCoords.y} to ${movement.destination.x},${movement.destination.y} `); console.log("board:"); this.printBoard(); }
+    if (BrowserData.IsDebugMode) { console.log(`moving piece ${pieceToMove.pieceCoords.x},${pieceToMove.pieceCoords.y} to ${movement.destination.x},${movement.destination.y} `); console.log("board:"); this.printBoard(); }
   }
 
   private reorderPiecesInBoard(piecesToReorder: Array<Piece>) {

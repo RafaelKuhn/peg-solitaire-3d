@@ -60,7 +60,7 @@
 </style>
 
 <script>
-  import { Utils } from "./Utils";
+  import BrowserData from "./BrowserData";
 </script>
 
 <abs>
@@ -68,7 +68,7 @@
     <img
       src="static/images/loading-cat.gif"
       alt="a loading cat funny gif"
-      class="{Utils.IsMobile ? 'img-mobile' : 'img'}"
+      class="{BrowserData.IsMobile ? 'img-mobile' : 'img'}"
     />
     <h2>Loading...</h2>
   </flex>
