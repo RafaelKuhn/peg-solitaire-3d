@@ -1,5 +1,3 @@
-# WORK IN PROGRESS
-
 English | [Portuguese](README_ptbr.md)
 <div align="center">
     <h1>Peg Solitaire</h1>
