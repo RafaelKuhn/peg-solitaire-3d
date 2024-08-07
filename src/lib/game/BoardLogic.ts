@@ -7,6 +7,9 @@ import BrowserData from '$lib/svelte/BrowserData';
 
 import { Blob, BlobFactory } from '$lib/game/Blob';
 
+const TAU = 6.28318530;
+
+
 export default class BoardLogic {
 
   private pieces: PieceMatrix;
@@ -14,7 +17,6 @@ export default class BoardLogic {
   private blobFactory: BlobFactory;
   private blobs: Array<Blob>;
 
-  // TODO: use piecesFactory instead of this
   private rootPiece: THREE.Group;
   private piecesParent: THREE.Group;
   
@@ -22,6 +24,11 @@ export default class BoardLogic {
   private boardTemplate: Array<Array<number>>;
 
   private scene: THREE.Scene;
+
+	
+	private piecesAmount: number = -1;
+
+	private trashIndex: number = 0;
 
   constructor(scene: THREE.Scene, rootPiece: THREE.Group, rootBoard: THREE.Group) {
 
@@ -40,6 +47,14 @@ export default class BoardLogic {
     
     // win panel debug
     // this.boardTemplate = [ [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 1, 0, 2, 2], [0, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [2, 2, 0, 0, 0, 2, 2], [2, 2, 0, 0, 0, 2, 2], ];
+
+		this.piecesAmount = 0;
+		this.boardTemplate.forEach(boardRow => {
+			boardRow.forEach(peg => {
+				if (peg === 1) this.piecesAmount += 1;
+			})
+		});
+		
 
     this.scene = scene;
     this.rootPiece = rootPiece;
@@ -96,7 +111,8 @@ export default class BoardLogic {
 
   public reorderPieces(): void {
     const remainingPieces = this.getRemainingPieces();
-    const trashPieces = this.getPiecesFromTrash()
+    const trashPieces = this.getPiecesFromTrash();
+		this.trashIndex = 0;
 
     const piecesToReorder = remainingPieces.concat(trashPieces);
     
@@ -116,34 +132,30 @@ export default class BoardLogic {
 
         // if piece is null, it has a hole there
         const currentPiece = this.pieces[y][x];
-        if (!currentPiece) { continue; }
+        if (!currentPiece) continue;
 
         const movements = new Array<Movement>();
         const currentPieceCoords = { x, y };
 
         // can be moved right ?
-        if (this.isNotOutOfBoard(x+2, y) && this.pieces[y][x+1] !== null && this.pieces[y][x+2] === null) {
+        if (this.isNotOutOfBoard(x+2, y) && this.pieces[y][x+1] !== null && this.pieces[y][x+2] === null)
           movements.push(new Movement( { x: x+2, y }, { x: x+1, y }))
-        }
 
         // can be moved left ?
-        if (this.isNotOutOfBoard(x-2, y) && this.pieces[y][x-1] !== null && this.pieces[y][x-2] === null) {
+        if (this.isNotOutOfBoard(x-2, y) && this.pieces[y][x-1] !== null && this.pieces[y][x-2] === null)
           movements.push(new Movement( { x: x-2, y }, { x: x-1, y }))
-        }
 
         // can be moved up ? (yes, -y is up, see this.pieces declaration)
-        if (this.isNotOutOfBoard(x, y-2) && this.pieces[y-1][x] !== null && this.pieces[y-2][x] === null) {
+        if (this.isNotOutOfBoard(x, y-2) && this.pieces[y-1][x] !== null && this.pieces[y-2][x] === null)
           movements.push(new Movement( { x, y: y-2 }, { x, y: y-1 }))
-        }
 
         // can be moved down ?
-        if (this.isNotOutOfBoard(x, y+2) && this.pieces[y+1][x] !== null && this.pieces[y+2][x] === null) {
+        if (this.isNotOutOfBoard(x, y+2) && this.pieces[y+1][x] !== null && this.pieces[y+2][x] === null)
           movements.push(new Movement( { x, y: y+2 }, { x, y: y+1 }))
-        }
 
-        if (movements.length > 0) {
+        if (movements.length > 0)
           piecesToMove.push(new PieceWithMovements(currentPiece, currentPieceCoords, movements));
-        } 
+
       }
     }
 
@@ -244,7 +256,17 @@ export default class BoardLogic {
     this.pieces[coords.y][coords.x] = null;
     this.piecesTrashStack.push(pieceToRemove!);
 
+		const lastMovablePiece = this.piecesAmount - 1;
+		const t = this.trashIndex / lastMovablePiece;
+		const angle = t * TAU + TAU * 0.5;
+		const cos = Math.cos(angle);
+		const sin = Math.sin(angle);
+
+		this.trashIndex += 1;
+
     pieceToRemove!.position.set(0, 1, -4);
+		const radius = 6;
+    pieceToRemove!.position.set(sin * radius, 0, cos * radius);
   }
 
   private recoverPieceFromTrash(): Piece|null {
@@ -303,7 +325,7 @@ export default class BoardLogic {
   }
 
   private isNotOutOfBoard(x: number, y: number): boolean {
-    return (!this.isOutOfBoard(x, y));
+    return !this.isOutOfBoard(x, y);
   }
   
   private isOutOfBoard(x: number, y: number): boolean {

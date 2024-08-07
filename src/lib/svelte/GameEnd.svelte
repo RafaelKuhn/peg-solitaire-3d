@@ -73,14 +73,14 @@
 {#if type === "winPanel"}
 	<winPanel class="{panelClass}" on:click={onClick} transition:fade={fadeConfig}>
 		<h1>🥳</h1>
-		<h2>Você ganhou!</h2>
-		<p><button on:click={onClick}>Daora!</button></p>
+		<h2>You won!</h2>
+		<p><button on:click={onClick}>Cool!</button></p>
 	</winPanel>
 
 {:else if type === "lostPanel"}
 	<lostPanel class="{panelClass}" on:click={onClick} transition:fade={fadeConfig}>
 		<h1>😢</h1>
-		<h2>Você perdeu!</h2>
+		<h2>You lost!</h2>
 		<button on:click={onClick}>Ok...</button>
 	</lostPanel>
 

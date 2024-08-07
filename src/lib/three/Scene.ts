@@ -20,7 +20,7 @@ import gameStatus from '$lib/svelte/GameStatus';
 import UniqueDomEvent from '$lib/misc/UniqueDomEvent';
 import EventDispatcher from '$lib/misc/EventDispatcher';
 
-const TAU = 6.283185;
+const TAU = 6.28318530;
 
 
 export default class {
